@@ -1,56 +1,60 @@
-import { SpeechClient } from "@google-cloud/speech";
-import { protos } from "@google-cloud/speech";
+import * as grpc from "@grpc/grpc-js";
+import * as fs from "fs";
+import { loadProto } from "../utils/protoSpeechToTextLoader";
+import path from "path";
 
-// Speech-to-Textクライアントの初期化
-const client = new SpeechClient();
+const PROTO_PATH = path.join(__dirname, "../../protos/speech.proto");
+
+// gRPCクライアントの初期化
+const SpeechProto = loadProto(PROTO_PATH) as any;
+const client = new SpeechProto.google.cloud.speech.v1.Speech(
+  "speech.googleapis.com:443",
+  grpc.credentials.createSsl()
+);
 
 /**
  * 音声データをテキストに変換
- * @param audioData 音声データ（Buffer形式）
+ * @param audioPath 音声ファイルパス
  * @returns テキストに変換された文字列
  */
-export const convertSpeechToText = async (audioData: Buffer): Promise<string> => {
+export const convertSpeechToText = async (audioPath: string): Promise<string> => {
   try {
-    // Speech-to-Text APIのリクエスト構造を定義
-    const request: protos.google.cloud.speech.v1.IRecognizeRequest = {
-      audio: {
-        content: audioData.toString("base64"), // 音声データをBase64形式に変換
-      },
+    // 音声データを読み込む
+    const audioData = fs.readFileSync(audioPath);
+
+    // Speech-to-Text APIのリクエスト構造
+    const request = {
       config: {
-        encoding: protos.google.cloud.speech.v1.RecognitionConfig.AudioEncoding.LINEAR16, // 型を明示
+        encoding: "LINEAR16", // WAV形式の場合
         sampleRateHertz: 16000,
-        languageCode: "ja-JP", // 日本語で変換
+        languageCode: "ja-JP",
+      },
+      audio: {
+        content: audioData, // バイナリデータをそのまま送信
       },
     };
 
-    // リクエストの詳細をログに出力
-    console.log("Speech-to-Text API Request Config:", JSON.stringify(request.config, null, 2));
-    console.log("Audio Data Length (Base64):", request.audio?.content?.length);
+    // gRPCリクエストを送信
+    const response = await new Promise<any>((resolve, reject) => {
+      client.Recognize(request, (err: Error | null, response: any) => {
+        if (err) return reject(err);
+        resolve(response);
+      });
+    });
 
-    // Speech-to-Text APIを呼び出して音声をテキストに変換
-    const [response] = await client.recognize(request);
-
-    // APIの結果をログに出力
-    console.log("Speech-to-Text API Response:", JSON.stringify(response, null, 2));
-
-    // APIの結果からテキストを抽出
+    // 結果からテキストを抽出
     const transcription = response.results
-      ?.map((result) => result.alternatives?.[0]?.transcript || "")
+      ?.map((result: any) => result.alternatives[0]?.transcript || "")
       .join(" ");
 
     if (!transcription) {
-      console.error("No transcription found in response.");
-      throw new Error("Failed to transcribe audio");
+      throw new Error("音声認識に失敗しました");
     }
 
     console.log("Transcription Result:", transcription);
-
     return transcription;
   } catch (error) {
-    // エラー時の詳細ログを出力
-    console.error("Error converting speech to text:");
-    console.error("Error Message:", error || error);
-
-    throw new Error("Speech-to-Text processing failed");
+    console.error("Error converting speech to text:", error);
+    throw new Error("音声認識処理中にエラーが発生しました");
   }
 };
