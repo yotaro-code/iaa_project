@@ -1,5 +1,4 @@
-import { TextToSpeechClient } from "@google-cloud/text-to-speech";
-import { protos } from "@google-cloud/text-to-speech";
+import { TextToSpeechClient, protos } from "@google-cloud/text-to-speech";
 
 // Text-to-Speechクライアントの初期化
 const client = new TextToSpeechClient();
@@ -7,22 +6,31 @@ const client = new TextToSpeechClient();
 /**
  * テキストを音声データに変換
  * @param text 音声に変換するテキスト
+ * @param ttsConfig 音声設定
  * @returns 生成された音声データ（Buffer形式）
  */
-export const synthesizeSpeech = async (text: string): Promise<Buffer> => {
+export const synthesizeSpeech = async (
+  text: string,
+  ttsConfig: {
+    ssmlGender?: protos.google.cloud.texttospeech.v1.SsmlVoiceGender;
+    name?: string;
+    speakingRate?: number;
+    pitch?: number;
+  }
+): Promise<Buffer> => {
   try {
     // Text-to-Speech APIのリクエスト構造を定義
     const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest = {
       input: { text }, // テキスト入力
       voice: {
         languageCode: "ja-JP", // 日本語
-        ssmlGender: protos.google.cloud.texttospeech.v1.SsmlVoiceGender.NEUTRAL, // 中立的な声
-        name: 'ja-JP-Wavenet-C', // Specify a specific voice model
+        ssmlGender: ttsConfig.ssmlGender,
+        name: ttsConfig.name,
       },
       audioConfig: {
         audioEncoding: protos.google.cloud.texttospeech.v1.AudioEncoding.MP3, // 音声形式
-        speakingRate: 1.5, // 話す速度
-        pitch: 0.0, // 声の高さ
+        speakingRate: ttsConfig.speakingRate,
+        pitch: ttsConfig.pitch,
       },
     };
 
@@ -39,5 +47,18 @@ export const synthesizeSpeech = async (text: string): Promise<Buffer> => {
   } catch (error) {
     console.error("Error processing text-to-speech:", error);
     throw new Error("Text-to-Speech processing failed");
+  }
+};
+
+// ssmlGenderを変換するヘルパー関数
+const mapSsmlGender = (gender: string): protos.google.cloud.texttospeech.v1.SsmlVoiceGender => {
+  switch (gender.toUpperCase()) {
+    case "MALE":
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.MALE;
+    case "FEMALE":
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.FEMALE;
+    case "NEUTRAL":
+    default:
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.NEUTRAL;
   }
 };
