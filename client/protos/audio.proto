@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package audio;
+
+// サービス定義
+service AudioService {
+  // クライアントが音声データを送り、サーバから音声データを受け取る
+  rpc ProcessAudio(AudioRequest) returns (AudioResponse);
+
+  // 初期化リクエスト
+  rpc InitializeSession(InitializeRequest) returns (InitializeResponse);
+}
+
+// --- メッセージ定義 ---
+
+// 初期化リクエスト
+message InitializeRequest {
+  string agentId = 1; // エージェントID
+  string userId = 2;  // ユーザーID
+}
+
+// 初期化レスポンス
+message InitializeResponse {
+  string sessionId = 1; // サーバが生成したセッションID
+  bytes initialAudioData = 2; // 初回の質問音声データ（バイナリ形式）
+}
+
+// クライアントから送信される音声データ
+message AudioRequest {
+  string sessionId = 1;       // セッションID
+  string agentId = 2;         // エージェントID
+  string userId = 3;          // ユーザーID
+  int32 currentRound = 4;     // 現在のラウンド番号
+  bytes audioData = 5;        // クライアントから送られる音声データ
+}
+
+// サーバーから返される音声データ
+message AudioResponse {
+  bytes audioData = 1; // Text to Speechで生成された音声データ（バイナリ）
+}

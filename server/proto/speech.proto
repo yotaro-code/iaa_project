@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package google.cloud.speech.v1;
+
+service Speech {
+  rpc Recognize (RecognizeRequest) returns (RecognizeResponse);
+}
+
+message RecognizeRequest {
+  RecognitionConfig config = 1;
+  RecognitionAudio audio = 2;
+}
+
+message RecognitionConfig {
+  enum AudioEncoding {
+    ENCODING_UNSPECIFIED = 0;
+    LINEAR16 = 1;
+    FLAC = 2;
+    MULAW = 3;
+    AMR = 4;
+    AMR_WB = 5;
+    OGG_OPUS = 6;
+    SPEEX_WITH_HEADER_BYTE = 7;
+  }
+  AudioEncoding encoding = 1;
+  int32 sampleRateHertz = 2;
+  string languageCode = 3;
+}
+
+message RecognitionAudio {
+  bytes content = 1;
+  string uri = 2;
+}
+
+message RecognizeResponse {
+  repeated SpeechRecognitionResult results = 2;
+}
+
+message SpeechRecognitionResult {
+  repeated SpeechRecognitionAlternative alternatives = 1;
+}
+
+message SpeechRecognitionAlternative {
+  string transcript = 1;
+  float confidence = 2;
+}
