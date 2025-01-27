@@ -2,7 +2,7 @@ import * as grpc from "@grpc/grpc-js";
 import { v4 as uuidv4 } from "uuid";
 import { synthesizeSpeech } from "./textToSpeechService";
 import { convertSpeechToText } from "./speechToTextService";
-import { saveSessionData, getSessionData } from "./firestoreService";
+import { getAgentSpeechConfig, saveSessionData, getSessionData } from "./firestoreService";
 import { generatePrompt } from "./vertexAIService";
 
 /**
@@ -18,7 +18,20 @@ export const initializeSession = async (
 
     // 初回の質問を生成（固定の質問として定義）
     const initialPrompt = `こんにちは。面接を始めます。自己紹介をお願いします。`;
-    const initialAudio = await synthesizeSpeech(initialPrompt);
+
+    // Firestoreから音声設定を取得
+    console.log("Fetching text-to-speech config for the agent...");
+    const rawTtsConfig = await getAgentSpeechConfig(agentId);
+
+      // ssmlGender を列挙型に変換
+    const ttsConfig = {
+      ssmlGender: mapSsmlGender(rawTtsConfig.ssmlGender),
+      name: rawTtsConfig.name,
+      speakingRate: rawTtsConfig.speakingRate,
+      pitch: rawTtsConfig.pitch,
+    };
+    console.log("Processed text-to-speech config:", ttsConfig);
+    const initialAudio = await synthesizeSpeech(initialPrompt, ttsConfig);
 
     // Firestoreにセッションデータを保存
     await saveSessionData(sessionId, agentId, userId, 1, [
@@ -66,6 +79,20 @@ export const processAudio = async (
       const nextPrompt = await generatePrompt(agentId, conversationHistory, userText, currentRound, promptType);
       console.log("Generated next prompt:", nextPrompt);
 
+      // Firestoreから音声設定を取得
+      console.log("Fetching text-to-speech config for the agent...");
+      const rawTtsConfig = await getAgentSpeechConfig(agentId);
+
+        // ssmlGender を列挙型に変換
+      const ttsConfig = {
+        ssmlGender: mapSsmlGender(rawTtsConfig.ssmlGender),
+        name: rawTtsConfig.name,
+        speakingRate: rawTtsConfig.speakingRate,
+        pitch: rawTtsConfig.pitch,
+      };
+      console.log("Processed text-to-speech config:", ttsConfig);
+
+
       // 次の質問またはフィードバックを音声化
       console.log("Synthesizing speech for the generated prompt...");
 
@@ -92,7 +119,7 @@ export const processAudio = async (
             // summary 部分を音声用のテキストに組み立てる
             const speechText = `では面接を終了します。これからフィードバックいたします。よかった点。${feedback.feedback.good_points.summary}。改善点。${feedback.feedback.improvement_points.summary}。`;
             console.log(`Synthesizing speech for feedback: ${speechText}`);
-            audioResponse = await synthesizeSpeech(speechText); // 音声合成を実行
+            audioResponse = await synthesizeSpeech(nextPrompt, ttsConfig); // 音声合成を実行
           } else {
             throw new Error("Invalid feedback format in the prompt.");
           }
@@ -103,7 +130,7 @@ export const processAudio = async (
       } else {
         // 通常の質問をそのまま音声化
         console.log(`Synthesizing speech for interview prompt: ${nextPrompt}`);
-        audioResponse = await synthesizeSpeech(nextPrompt);
+        audioResponse = await synthesizeSpeech(nextPrompt, ttsConfig);
       }
 
       console.log("Speech synthesis completed.");
@@ -173,4 +200,20 @@ export const processAudio = async (
       callback({ code: grpc.status.INTERNAL, message: "Failed to process audio" });
     }
   };
-  
+
+
+  import { protos } from "@google-cloud/text-to-speech";
+
+// ssmlGenderを変換するヘルパー関数
+const mapSsmlGender = (gender: string): protos.google.cloud.texttospeech.v1.SsmlVoiceGender => {
+  switch (gender.toUpperCase()) {
+    case "MALE":
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.MALE;
+    case "FEMALE":
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.FEMALE;
+    case "NEUTRAL":
+    default:
+      return protos.google.cloud.texttospeech.v1.SsmlVoiceGender.NEUTRAL;
+  }
+};
+
