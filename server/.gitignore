@@ -1,0 +1,31 @@
+# ビルド成果物（dist フォルダ）
+dist/
+
+# 環境変数ファイル
+.env
+
+# OSによる不要ファイル
+.DS_Store
+
+# npmパッケージインストール時に生成されるファイル
+node_modules/
+package-lock.json
+
+# TypeScriptのコンパイル情報
+*.tsbuildinfo
+
+# テストデータや一時ファイル
+test/*.wav
+test/*.json
+
+# Docker関連
+.dockerignore
+Dockerfile
+
+# ログファイル
+*.log
+
+# IDEやエディタによる設定ファイル
+.idea/
+.vscode/
+*.swp
