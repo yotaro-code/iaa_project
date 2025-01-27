@@ -58,42 +58,110 @@ export const getSessionData = async (sessionId: string): Promise<any> => {
  * @param agentId エージェントID（例: "junior_engineer", "tech_lead", "manager"）
  * @returns エージェントの詳細情報
  */
-export const getAgentData = async (agentId: string): Promise<{
-    AgentId: string;
-    Name: string;
-    Description: string;
-    PromptTemplates: any;
-    RoleSpecificTopics: any[];
-    LastUpdated: string;
-  } | null> => {
-    try {
-      const agentDoc = firestore.collection("agents").doc(agentId);
-      const agentSnapshot = await agentDoc.get();
-  
-      if (!agentSnapshot.exists) {
-        console.error(`Agent with ID ${agentId} does not exist in Firestore.`);
-        return null;
-      }
-  
-      const agentData = agentSnapshot.data();
-      if (!agentData) {
-        console.error(`Failed to retrieve data for agent ID ${agentId}.`);
-        return null;
-      }
-  
-      return {
-        AgentId: agentData.AgentId || agentId,
-        Name: agentData.Name || "Unknown",
-        Description: agentData.Description || "",
-        PromptTemplates: agentData.PromptTemplates || {},
-        RoleSpecificTopics: agentData.RoleSpecificTopics || [],
-        LastUpdated: agentData.LastUpdated || "",
-      };
-    } catch (error) {
-      console.error("Error retrieving agent data:", error);
-      throw new Error("Failed to retrieve agent data from Firestore.");
-    }
+export const getAgentData = async (
+  agentId: string
+): Promise<{
+  agentId: string;
+  name: string;
+  description: string;
+  maxRounds: number;
+  topicSwitchRounds: number[];
+  topics: Array<{
+    name: string;
+    guidance: string;
+    keywords: string[];
+  }>;
+  feedbackTemplate: {
+    guidance: string;
+    points: string[];
   };
+  textToSpeechConfig: {
+    ssmlGender: string;
+    name: string;
+    speakingRate: number;
+    pitch: number;
+  };
+  imageUrl: string;
+  lastUpdated: string;
+} | null> => {
+  try {
+    // Firestoreの`agents`コレクションからエージェントデータを取得
+    const agentDoc = firestore.collection("agents").doc(agentId);
+    const agentSnapshot = await agentDoc.get();
+
+    if (!agentSnapshot.exists) {
+      console.error(`Agent with ID ${agentId} does not exist in Firestore.`);
+      return null;
+    }
+
+    const agentData = agentSnapshot.data();
+    if (!agentData) {
+      console.error(`Failed to retrieve data for agent ID ${agentId}.`);
+      return null;
+    }
+
+    // 必要なフィールドを返却
+    return {
+      agentId: agentData.agentId || agentId,
+      name: agentData.name || "Unknown",
+      description: agentData.description || "No description provided.",
+      maxRounds: agentData.maxRounds || 0,
+      topicSwitchRounds: agentData.topicSwitchRounds || [],
+      topics: agentData.topics || [],
+      feedbackTemplate: agentData.feedbackTemplate || {
+        guidance: "",
+        points: [],
+      },
+      textToSpeechConfig: agentData.textToSpeechConfig || {
+        ssmlGender: "NEUTRAL",
+        name: "",
+        speakingRate: 1.0,
+        pitch: 0.0,
+      },
+      imageUrl: agentData.imageUrl || "",
+      lastUpdated: agentData.lastUpdated || "",
+    };
+  } catch (error) {
+    console.error("Error retrieving agent data:", error);
+    throw new Error("Failed to retrieve agent data from Firestore.");
+  }
+};
+
+  /**
+ * 指定されたエージェントの音声設定を取得
+ * @param agentId エージェントID
+ * @returns 音声設定
+ */
+export const getAgentSpeechConfig = async (agentId: string): Promise<{
+  ssmlGender: string;
+  name: string;
+  speakingRate: number;
+  pitch: number;
+}> => {
+  try {
+    const agentDoc = firestore.collection("agents").doc(agentId);
+    const agentSnapshot = await agentDoc.get();
+
+    if (!agentSnapshot.exists) {
+      throw new Error(`Agent with ID ${agentId} does not exist in Firestore.`);
+    }
+
+    const agentData = agentSnapshot.data();
+    if (!agentData?.textToSpeechConfig) {
+      throw new Error(`Agent with ID ${agentId} does not have text-to-speech configuration.`);
+    }
+
+    return {
+      ssmlGender: agentData.textToSpeechConfig.ssmlGender || "NEUTRAL",
+      name: agentData.textToSpeechConfig.name || "ja-JP-Wavenet-C",
+      speakingRate: agentData.textToSpeechConfig.speakingRate || 1.0,
+      pitch: agentData.textToSpeechConfig.pitch || 0.0,
+    };
+  } catch (error) {
+    console.error("Error fetching agent speech config:", error);
+    throw new Error("Failed to fetch agent speech config.");
+  }
+};
 
   /**
  * エージェントコレクション内の全エージェントデータを取得
