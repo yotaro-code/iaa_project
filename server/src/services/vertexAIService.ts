@@ -40,9 +40,6 @@ export const generatePrompt = async (
       feedbackTemplate,
     } = agentData;
 
-    // 最新のユーザー応答を取得
-    const latestUserResponse = conversationHistory.slice(-1)[0]?.message || "回答がまだありません";
-
     // 会話履歴を文字列に変換
     const historyText =
       conversationHistory.length > 0
@@ -61,6 +58,8 @@ export const generatePrompt = async (
         }
       }
 
+      console.log('直前までの会話履歴:${historyText}');
+
       prompt = `
         # あなたの役割
         ${description}
@@ -73,44 +72,59 @@ export const generatePrompt = async (
         - キーワード: ${currentTopic.keywords.join(", ")}
 
         # 質問に関する指示
-        - 面接官として、以下の会話履歴を必ず参照し、直近のユーザーの回答を深掘りする質問を1つだけ生成してください。
+        - あなたは面接官の役割を担うAIです。
+        - 面接官として、以下の会話履歴を必ず参照し、直近のユーザーの回答を深掘りする「質問」を「1つ」だけ生成してください。
         - 直前の質問内容と重複しないようにしてください。
         - 質問は100文字以内で簡潔に表現してください。
         - 質問には絵文字や記号を使用しないでください。音声変換できる文字だけ利用してください。
+        - 〇〇などの決まっていない表現は使わないでください。
+
+        # 出力例
+        ありがとうございます。先ほどのプロダクトについて、具体的にどう開発したのか、具体的に教えてください。
 
         # 面接の会話履歴（Qがあなたの質問、Aがユーザーの回答）
         ${historyText}
 
-        # ユーザーの直近の回答
-        ${latestUserResponse}
       `;
     } else if (promptType === "feedback") {
       prompt = `
-        あなたは面接官の役割を担うAIです。以下の条件に基づいて、ユーザーが面接練習で回答した内容を評価し、フィードバックを作成してください。
-
+        あなたは面接官の役割を担うAIです。「面接の会話履歴」を利用し、以下の条件に基づいて、ユーザーが面接練習で回答した内容を評価し、フィードバックを作成してください。
+    
+        # あなたの役割
+        ${description}
+    
         # フィードバックの指示
         - ${feedbackTemplate.guidance}
         - ガイドライン:
           ${feedbackTemplate.points.map((point, index) => `${index + 1}. ${point}`).join("\n")}
-
+    
         #### 条件:
-        1. 良かった点と改善点をそれぞれ詳細（500文字以内）と要約（100文字以内）で記述してください。
-        2. 言葉遣いはポジティブで、ユーザーの成長をサポートする要素を含めてください。
-
+        1. 良かった点と改善点をそれぞれ詳細（300文字以内）と要約（100文字以内）で記述してください。
+        2. 会話履歴から評価を5段階（1=非常に不十分、2=不十分、3=普通、4=優れている、5=非常に優れている）で行ってください。
+        3. 評価理由を200文字以内で具体的に説明してください。
+        4. 面接結果（合格または不合格）を記載してください。
+        5. 合否の理由を具体的に説明してください。
+        6. 言葉遣いはポジティブで、ユーザーの成長をサポートする要素を含めてください。
+        7. ユーザーは音声で回答しています。話言葉になるため、テキストでは言葉遣いが綺麗に見えない可能性は考慮して評価してください。
+    
         #### 出力形式:json
         {
           "feedback": {
             "good_points": {
-              "detailed": "ここに良かった点の詳細を記載します。",
-              "summary": "ここに良かった点の要約を記載します。"
+              "detailed": "ここに良かった点の詳細を記載します。300文字以内",
+              "summary": "ここに良かった点の要約を記載します。100文字以内"
             },
             "improvement_points": {
-              "detailed": "ここに改善点の詳細を記載します。",
-              "summary": "ここに改善点の要約を記載します。"
-            }
+              "detailed": "ここに改善点の詳細を記載します。300文字以内",
+              "summary": "ここに改善点の要約を記載します。100文字以内"
+            },
+            "evaluationScore": 4, // 1=非常に不十分 ～ 5=非常に優れている
+            "evaluationReason": "ここに評価理由を記載します。",
+            "passOrFail": "合格", // "合格" または "不合格"
+            "reason": "ここに合否の理由を記載します。"
           }
         }
-
+    
         #### 面接の会話履歴（Qがあなたの質問、Aがユーザーの回答）
         ${historyText}
       `;
@@ -122,7 +136,8 @@ export const generatePrompt = async (
 
     // Vertex AI モデルを初期化してプロンプトを送信
     const generativeModel = vertexAIClient.preview.getGenerativeModel({
-      model: "gemini-1.5-flash-001",
+      model: "gemini-1.5-flash-002",
+      // model: "gemini-1.5-flash-001",
       generationConfig: {
         maxOutputTokens: 8192,
         temperature: 1,
