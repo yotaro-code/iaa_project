@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../repositories/interview_repository.dart';
@@ -36,8 +38,12 @@ class InterviewViewModel extends _$InterviewViewModel {
         userId: state.userId,
       );
 
+      final nextRound = state.currentRound + 1;
+
       // 状態を更新
+      print("updateState");
       state = state.copyWith(
+        currentRound: nextRound,
         sessionId: response.sessionId,
         isRequesting: false,
         responseAudioData:
@@ -58,6 +64,7 @@ class InterviewViewModel extends _$InterviewViewModel {
     Uint8List? requestAudioData,
     Uint8List? responseAudioData,
   }) {
+    print("updateState");
     state = state.copyWith(
       isAgentSpeaking: isAgentSpeaking ?? state.isAgentSpeaking,
       isRecording: isRecording ?? state.isRecording,
@@ -84,11 +91,13 @@ class InterviewViewModel extends _$InterviewViewModel {
         currentRound: state.currentRound,
       );
 
+      print("updateState");
       state = state.copyWith(
         //isAgentSpeaking: false,
         responseAudioData: Uint8List.fromList(audioData), // サーバーからの音声データを格納
       );
     } catch (e) {
+      print("updateState");
       state = state.copyWith(isAgentSpeaking: false);
       throw Exception('サーバー音声取得中にエラーが発生しました: $e');
     }
@@ -96,6 +105,7 @@ class InterviewViewModel extends _$InterviewViewModel {
 
   /// ユーザーの音声データをサーバーに送信
   Future<void> sendAudio(Uint8List audioData, int maxRounds) async {
+    print("updateState");
     state = state.copyWith(
       isRecording: false,
       requestAudioData: audioData, // 録音したデータを格納
@@ -107,6 +117,11 @@ class InterviewViewModel extends _$InterviewViewModel {
 
     print('Audio Data Length: ${audioData.length}');
     print('Audio Data Preview: ${audioData.sublist(0, 20)}');
+
+    // ViewModel上で先にaudioを一時保存しておく
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/temp_audio.mp3');
+    await tempFile.writeAsBytes(audioData);
 
     final repository = ref.read(interviewRepositoryProvider);
 
@@ -121,6 +136,7 @@ class InterviewViewModel extends _$InterviewViewModel {
 
       final nextRound = state.currentRound + 1;
 
+      print("updateState");
       state = state.copyWith(
         currentRound: nextRound,
         responseAudioData:
@@ -134,11 +150,13 @@ class InterviewViewModel extends _$InterviewViewModel {
 
   /// 録音開始
   void startRecording() {
+    print("updateState");
     state = state.copyWith(isRecording: true);
   }
 
   /// 録音停止
   void stopRecording() {
+    print("updateState");
     state = state.copyWith(isRecording: false);
   }
 }

@@ -7,7 +7,7 @@ part of 'interview_view_model.dart';
 // **************************************************************************
 
 String _$interviewViewModelHash() =>
-    r'8a79d3ea208031f52563b3745120f482fcfab36a';
+    r'72ba9e3c8fee3bba6b45bc8166b1c239db3b0cd1';
 
 /// Copied from Dart SDK
 class _SystemHash {
