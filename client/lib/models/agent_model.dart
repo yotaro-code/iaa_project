@@ -14,6 +14,7 @@ class Agent with _$Agent {
     required List<int> topicSwitchRounds, // 話題切り替えラウンド番号
     required List<Topic> topics, // 話題リスト
     required FeedbackTemplate feedbackTemplate, // フィードバックテンプレート
+    required TextToSpeechConfig textToSpeechConfig, // Text-to-Speech設定
     required String lastUpdated, // 最終更新日時（ISO8601形式）
   }) = _Agent;
 
@@ -40,4 +41,17 @@ class FeedbackTemplate with _$FeedbackTemplate {
 
   factory FeedbackTemplate.fromJson(Map<String, dynamic> json) =>
       _$FeedbackTemplateFromJson(json);
+}
+
+@freezed
+class TextToSpeechConfig with _$TextToSpeechConfig {
+  const factory TextToSpeechConfig({
+    required String ssmlGender, // 音声の性別
+    required String name, // 音声モデル名
+    required double speakingRate, // 話す速度
+    required double pitch, // 声の高さ
+  }) = _TextToSpeechConfig;
+
+  factory TextToSpeechConfig.fromJson(Map<String, dynamic> json) =>
+      _$TextToSpeechConfigFromJson(json);
 }

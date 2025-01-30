@@ -31,6 +31,8 @@ mixin _$Agent {
   List<Topic> get topics => throw _privateConstructorUsedError; // 話題リスト
   FeedbackTemplate get feedbackTemplate =>
       throw _privateConstructorUsedError; // フィードバックテンプレート
+  TextToSpeechConfig get textToSpeechConfig =>
+      throw _privateConstructorUsedError; // Text-to-Speech設定
   String get lastUpdated => throw _privateConstructorUsedError;
 
   /// Serializes this Agent to a JSON map.
@@ -56,9 +58,11 @@ abstract class $AgentCopyWith<$Res> {
       List<int> topicSwitchRounds,
       List<Topic> topics,
       FeedbackTemplate feedbackTemplate,
+      TextToSpeechConfig textToSpeechConfig,
       String lastUpdated});
 
   $FeedbackTemplateCopyWith<$Res> get feedbackTemplate;
+  $TextToSpeechConfigCopyWith<$Res> get textToSpeechConfig;
 }
 
 /// @nodoc
@@ -84,6 +88,7 @@ class _$AgentCopyWithImpl<$Res, $Val extends Agent>
     Object? topicSwitchRounds = null,
     Object? topics = null,
     Object? feedbackTemplate = null,
+    Object? textToSpeechConfig = null,
     Object? lastUpdated = null,
   }) {
     return _then(_value.copyWith(
@@ -119,6 +124,10 @@ class _$AgentCopyWithImpl<$Res, $Val extends Agent>
           ? _value.feedbackTemplate
           : feedbackTemplate // ignore: cast_nullable_to_non_nullable
               as FeedbackTemplate,
+      textToSpeechConfig: null == textToSpeechConfig
+          ? _value.textToSpeechConfig
+          : textToSpeechConfig // ignore: cast_nullable_to_non_nullable
+              as TextToSpeechConfig,
       lastUpdated: null == lastUpdated
           ? _value.lastUpdated
           : lastUpdated // ignore: cast_nullable_to_non_nullable
@@ -133,6 +142,17 @@ class _$AgentCopyWithImpl<$Res, $Val extends Agent>
   $FeedbackTemplateCopyWith<$Res> get feedbackTemplate {
     return $FeedbackTemplateCopyWith<$Res>(_value.feedbackTemplate, (value) {
       return _then(_value.copyWith(feedbackTemplate: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Agent
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $TextToSpeechConfigCopyWith<$Res> get textToSpeechConfig {
+    return $TextToSpeechConfigCopyWith<$Res>(_value.textToSpeechConfig,
+        (value) {
+      return _then(_value.copyWith(textToSpeechConfig: value) as $Val);
     });
   }
 }
@@ -153,10 +173,13 @@ abstract class _$$AgentImplCopyWith<$Res> implements $AgentCopyWith<$Res> {
       List<int> topicSwitchRounds,
       List<Topic> topics,
       FeedbackTemplate feedbackTemplate,
+      TextToSpeechConfig textToSpeechConfig,
       String lastUpdated});
 
   @override
   $FeedbackTemplateCopyWith<$Res> get feedbackTemplate;
+  @override
+  $TextToSpeechConfigCopyWith<$Res> get textToSpeechConfig;
 }
 
 /// @nodoc
@@ -180,6 +203,7 @@ class __$$AgentImplCopyWithImpl<$Res>
     Object? topicSwitchRounds = null,
     Object? topics = null,
     Object? feedbackTemplate = null,
+    Object? textToSpeechConfig = null,
     Object? lastUpdated = null,
   }) {
     return _then(_$AgentImpl(
@@ -215,6 +239,10 @@ class __$$AgentImplCopyWithImpl<$Res>
           ? _value.feedbackTemplate
           : feedbackTemplate // ignore: cast_nullable_to_non_nullable
               as FeedbackTemplate,
+      textToSpeechConfig: null == textToSpeechConfig
+          ? _value.textToSpeechConfig
+          : textToSpeechConfig // ignore: cast_nullable_to_non_nullable
+              as TextToSpeechConfig,
       lastUpdated: null == lastUpdated
           ? _value.lastUpdated
           : lastUpdated // ignore: cast_nullable_to_non_nullable
@@ -235,6 +263,7 @@ class _$AgentImpl implements _Agent {
       required final List<int> topicSwitchRounds,
       required final List<Topic> topics,
       required this.feedbackTemplate,
+      required this.textToSpeechConfig,
       required this.lastUpdated})
       : _topicSwitchRounds = topicSwitchRounds,
         _topics = topics;
@@ -282,11 +311,14 @@ class _$AgentImpl implements _Agent {
   final FeedbackTemplate feedbackTemplate;
 // フィードバックテンプレート
   @override
+  final TextToSpeechConfig textToSpeechConfig;
+// Text-to-Speech設定
+  @override
   final String lastUpdated;
 
   @override
   String toString() {
-    return 'Agent(agentId: $agentId, name: $name, description: $description, imageUrl: $imageUrl, maxRounds: $maxRounds, topicSwitchRounds: $topicSwitchRounds, topics: $topics, feedbackTemplate: $feedbackTemplate, lastUpdated: $lastUpdated)';
+    return 'Agent(agentId: $agentId, name: $name, description: $description, imageUrl: $imageUrl, maxRounds: $maxRounds, topicSwitchRounds: $topicSwitchRounds, topics: $topics, feedbackTemplate: $feedbackTemplate, textToSpeechConfig: $textToSpeechConfig, lastUpdated: $lastUpdated)';
   }
 
   @override
@@ -307,6 +339,8 @@ class _$AgentImpl implements _Agent {
             const DeepCollectionEquality().equals(other._topics, _topics) &&
             (identical(other.feedbackTemplate, feedbackTemplate) ||
                 other.feedbackTemplate == feedbackTemplate) &&
+            (identical(other.textToSpeechConfig, textToSpeechConfig) ||
+                other.textToSpeechConfig == textToSpeechConfig) &&
             (identical(other.lastUpdated, lastUpdated) ||
                 other.lastUpdated == lastUpdated));
   }
@@ -323,6 +357,7 @@ class _$AgentImpl implements _Agent {
       const DeepCollectionEquality().hash(_topicSwitchRounds),
       const DeepCollectionEquality().hash(_topics),
       feedbackTemplate,
+      textToSpeechConfig,
       lastUpdated);
 
   /// Create a copy of Agent
@@ -351,6 +386,7 @@ abstract class _Agent implements Agent {
       required final List<int> topicSwitchRounds,
       required final List<Topic> topics,
       required final FeedbackTemplate feedbackTemplate,
+      required final TextToSpeechConfig textToSpeechConfig,
       required final String lastUpdated}) = _$AgentImpl;
 
   factory _Agent.fromJson(Map<String, dynamic> json) = _$AgentImpl.fromJson;
@@ -371,6 +407,8 @@ abstract class _Agent implements Agent {
   List<Topic> get topics; // 話題リスト
   @override
   FeedbackTemplate get feedbackTemplate; // フィードバックテンプレート
+  @override
+  TextToSpeechConfig get textToSpeechConfig; // Text-to-Speech設定
   @override
   String get lastUpdated;
 
@@ -752,5 +790,219 @@ abstract class _FeedbackTemplate implements FeedbackTemplate {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$FeedbackTemplateImplCopyWith<_$FeedbackTemplateImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+TextToSpeechConfig _$TextToSpeechConfigFromJson(Map<String, dynamic> json) {
+  return _TextToSpeechConfig.fromJson(json);
+}
+
+/// @nodoc
+mixin _$TextToSpeechConfig {
+  String get ssmlGender => throw _privateConstructorUsedError; // 音声の性別
+  String get name => throw _privateConstructorUsedError; // 音声モデル名
+  double get speakingRate => throw _privateConstructorUsedError; // 話す速度
+  double get pitch => throw _privateConstructorUsedError;
+
+  /// Serializes this TextToSpeechConfig to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of TextToSpeechConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $TextToSpeechConfigCopyWith<TextToSpeechConfig> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TextToSpeechConfigCopyWith<$Res> {
+  factory $TextToSpeechConfigCopyWith(
+          TextToSpeechConfig value, $Res Function(TextToSpeechConfig) then) =
+      _$TextToSpeechConfigCopyWithImpl<$Res, TextToSpeechConfig>;
+  @useResult
+  $Res call(
+      {String ssmlGender, String name, double speakingRate, double pitch});
+}
+
+/// @nodoc
+class _$TextToSpeechConfigCopyWithImpl<$Res, $Val extends TextToSpeechConfig>
+    implements $TextToSpeechConfigCopyWith<$Res> {
+  _$TextToSpeechConfigCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of TextToSpeechConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? ssmlGender = null,
+    Object? name = null,
+    Object? speakingRate = null,
+    Object? pitch = null,
+  }) {
+    return _then(_value.copyWith(
+      ssmlGender: null == ssmlGender
+          ? _value.ssmlGender
+          : ssmlGender // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      speakingRate: null == speakingRate
+          ? _value.speakingRate
+          : speakingRate // ignore: cast_nullable_to_non_nullable
+              as double,
+      pitch: null == pitch
+          ? _value.pitch
+          : pitch // ignore: cast_nullable_to_non_nullable
+              as double,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$TextToSpeechConfigImplCopyWith<$Res>
+    implements $TextToSpeechConfigCopyWith<$Res> {
+  factory _$$TextToSpeechConfigImplCopyWith(_$TextToSpeechConfigImpl value,
+          $Res Function(_$TextToSpeechConfigImpl) then) =
+      __$$TextToSpeechConfigImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String ssmlGender, String name, double speakingRate, double pitch});
+}
+
+/// @nodoc
+class __$$TextToSpeechConfigImplCopyWithImpl<$Res>
+    extends _$TextToSpeechConfigCopyWithImpl<$Res, _$TextToSpeechConfigImpl>
+    implements _$$TextToSpeechConfigImplCopyWith<$Res> {
+  __$$TextToSpeechConfigImplCopyWithImpl(_$TextToSpeechConfigImpl _value,
+      $Res Function(_$TextToSpeechConfigImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of TextToSpeechConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? ssmlGender = null,
+    Object? name = null,
+    Object? speakingRate = null,
+    Object? pitch = null,
+  }) {
+    return _then(_$TextToSpeechConfigImpl(
+      ssmlGender: null == ssmlGender
+          ? _value.ssmlGender
+          : ssmlGender // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      speakingRate: null == speakingRate
+          ? _value.speakingRate
+          : speakingRate // ignore: cast_nullable_to_non_nullable
+              as double,
+      pitch: null == pitch
+          ? _value.pitch
+          : pitch // ignore: cast_nullable_to_non_nullable
+              as double,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TextToSpeechConfigImpl implements _TextToSpeechConfig {
+  const _$TextToSpeechConfigImpl(
+      {required this.ssmlGender,
+      required this.name,
+      required this.speakingRate,
+      required this.pitch});
+
+  factory _$TextToSpeechConfigImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TextToSpeechConfigImplFromJson(json);
+
+  @override
+  final String ssmlGender;
+// 音声の性別
+  @override
+  final String name;
+// 音声モデル名
+  @override
+  final double speakingRate;
+// 話す速度
+  @override
+  final double pitch;
+
+  @override
+  String toString() {
+    return 'TextToSpeechConfig(ssmlGender: $ssmlGender, name: $name, speakingRate: $speakingRate, pitch: $pitch)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TextToSpeechConfigImpl &&
+            (identical(other.ssmlGender, ssmlGender) ||
+                other.ssmlGender == ssmlGender) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.speakingRate, speakingRate) ||
+                other.speakingRate == speakingRate) &&
+            (identical(other.pitch, pitch) || other.pitch == pitch));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, ssmlGender, name, speakingRate, pitch);
+
+  /// Create a copy of TextToSpeechConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TextToSpeechConfigImplCopyWith<_$TextToSpeechConfigImpl> get copyWith =>
+      __$$TextToSpeechConfigImplCopyWithImpl<_$TextToSpeechConfigImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TextToSpeechConfigImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _TextToSpeechConfig implements TextToSpeechConfig {
+  const factory _TextToSpeechConfig(
+      {required final String ssmlGender,
+      required final String name,
+      required final double speakingRate,
+      required final double pitch}) = _$TextToSpeechConfigImpl;
+
+  factory _TextToSpeechConfig.fromJson(Map<String, dynamic> json) =
+      _$TextToSpeechConfigImpl.fromJson;
+
+  @override
+  String get ssmlGender; // 音声の性別
+  @override
+  String get name; // 音声モデル名
+  @override
+  double get speakingRate; // 話す速度
+  @override
+  double get pitch;
+
+  /// Create a copy of TextToSpeechConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TextToSpeechConfigImplCopyWith<_$TextToSpeechConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

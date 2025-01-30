@@ -20,6 +20,8 @@ _$AgentImpl _$$AgentImplFromJson(Map<String, dynamic> json) => _$AgentImpl(
           .toList(),
       feedbackTemplate: FeedbackTemplate.fromJson(
           json['feedbackTemplate'] as Map<String, dynamic>),
+      textToSpeechConfig: TextToSpeechConfig.fromJson(
+          json['textToSpeechConfig'] as Map<String, dynamic>),
       lastUpdated: json['lastUpdated'] as String,
     );
 
@@ -33,6 +35,7 @@ Map<String, dynamic> _$$AgentImplToJson(_$AgentImpl instance) =>
       'topicSwitchRounds': instance.topicSwitchRounds,
       'topics': instance.topics,
       'feedbackTemplate': instance.feedbackTemplate,
+      'textToSpeechConfig': instance.textToSpeechConfig,
       'lastUpdated': instance.lastUpdated,
     };
 
@@ -63,4 +66,22 @@ Map<String, dynamic> _$$FeedbackTemplateImplToJson(
     <String, dynamic>{
       'guidance': instance.guidance,
       'points': instance.points,
+    };
+
+_$TextToSpeechConfigImpl _$$TextToSpeechConfigImplFromJson(
+        Map<String, dynamic> json) =>
+    _$TextToSpeechConfigImpl(
+      ssmlGender: json['ssmlGender'] as String,
+      name: json['name'] as String,
+      speakingRate: (json['speakingRate'] as num).toDouble(),
+      pitch: (json['pitch'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$$TextToSpeechConfigImplToJson(
+        _$TextToSpeechConfigImpl instance) =>
+    <String, dynamic>{
+      'ssmlGender': instance.ssmlGender,
+      'name': instance.name,
+      'speakingRate': instance.speakingRate,
+      'pitch': instance.pitch,
     };

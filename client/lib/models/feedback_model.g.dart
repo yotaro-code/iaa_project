@@ -41,12 +41,24 @@ _$FeedbackDetailsImpl _$$FeedbackDetailsImplFromJson(
         Map<String, dynamic> json) =>
     _$FeedbackDetailsImpl(
       goodPointsDetailed: json['good_points_detailed'] as String,
+      goodPointsSummary: json['good_points_summary'] as String,
       improvementPointsDetailed: json['improvement_points_detailed'] as String,
+      improvementPointsSummary: json['improvement_points_summary'] as String,
+      evaluationScore: (json['evaluationScore'] as num).toInt(),
+      evaluationReason: json['evaluationReason'] as String,
+      passOrFail: json['passOrFail'] as String,
+      reason: json['reason'] as String,
     );
 
 Map<String, dynamic> _$$FeedbackDetailsImplToJson(
         _$FeedbackDetailsImpl instance) =>
     <String, dynamic>{
       'good_points_detailed': instance.goodPointsDetailed,
+      'good_points_summary': instance.goodPointsSummary,
       'improvement_points_detailed': instance.improvementPointsDetailed,
+      'improvement_points_summary': instance.improvementPointsSummary,
+      'evaluationScore': instance.evaluationScore,
+      'evaluationReason': instance.evaluationReason,
+      'passOrFail': instance.passOrFail,
+      'reason': instance.reason,
     };
