@@ -2,7 +2,7 @@ import * as grpc from "@grpc/grpc-js";
 import { v4 as uuidv4 } from "uuid";
 import { synthesizeSpeech } from "./textToSpeechService";
 import { convertSpeechToText } from "./speechToTextService";
-import { getAgentSpeechConfig, saveSessionData, getSessionData } from "./firestoreService";
+import { getAgentSpeechConfig, getAgentData, saveSessionData, getSessionData } from "./firestoreService";
 import { generatePrompt } from "./vertexAIService";
 
 /**
@@ -17,7 +17,7 @@ export const initializeSession = async (
     const sessionId = uuidv4();
 
     // 初回の質問を生成（固定の質問として定義）
-    const initialPrompt = `こんにちは。面接を始めます。自己紹介をお願いします。`;
+    const initialPrompt = `こんにちは。面接を始めます。回答は1分以内にお願いします。まずは、自己紹介をお願いします。`;
 
     // Firestoreから音声設定を取得
     console.log("Fetching text-to-speech config for the agent...");
@@ -68,10 +68,22 @@ export const processAudio = async (
       const conversationHistory = sessionData?.conversationHistory || [];
       console.log("Fetched session data successfully:", conversationHistory);
   
+      // Firestoreからエージェントデータを取得
+      console.log("Fetching agent data from Firestore...");
+      const agentData = await getAgentData(agentId);
+      if (!agentData) {
+        throw new Error(`Agent data not found for agentId: ${agentId}`);
+      }
+      console.log("Fetched agent data successfully:", agentData);
+
+      const maxRounds = agentData.maxRounds || 6; // デフォルト値を6に設定
+      console.log(`Max rounds for agent ${agentId}: ${maxRounds}`);
+
       // プロンプトタイプを決定
-      const promptType: "interview" | "feedback" = currentRound === 3
-        ? "feedback" // フィードバック
-        : "interview"; // 通常の質問
+      const promptType: "interview" | "feedback" =
+        currentRound === maxRounds
+          ? "feedback" // 最終ラウンドではフィードバックを生成
+          : "interview"; // それ以外は通常の質問
       console.log(`Determined prompt type: ${promptType}`);
   
       // Geminiで次の質問またはフィードバックを生成
@@ -118,8 +130,11 @@ export const processAudio = async (
           ) {
             // summary 部分を音声用のテキストに組み立てる
             const speechText = `では面接を終了します。これからフィードバックいたします。よかった点。${feedback.feedback.good_points.summary}。改善点。${feedback.feedback.improvement_points.summary}。`;
+            console.log(`ここ注目！フィードバック文章が！`);
             console.log(`Synthesizing speech for feedback: ${speechText}`);
-            audioResponse = await synthesizeSpeech(nextPrompt, ttsConfig); // 音声合成を実行
+
+            // 音声合成を実行
+            audioResponse = await synthesizeSpeech(speechText, ttsConfig); // 音声合成を実行
           } else {
             throw new Error("Invalid feedback format in the prompt.");
           }
@@ -147,27 +162,39 @@ export const processAudio = async (
           .replace(/```json/g, "") // ` ```json ` を削除
           .replace(/```/g, "") // ` ``` ` を削除
           .trim();
-
+      
         try {
           // フィードバックのJSONを解析
           const feedback = JSON.parse(sanitizedPrompt);
-
+      
           // フィードバックが正しい形式かどうかを確認
           if (
             feedback.feedback &&
             feedback.feedback.good_points &&
             feedback.feedback.good_points.detailed &&
+            feedback.feedback.good_points.summary &&
             feedback.feedback.improvement_points &&
-            feedback.feedback.improvement_points.detailed
+            feedback.feedback.improvement_points.detailed &&
+            feedback.feedback.improvement_points.summary &&
+            typeof feedback.feedback.evaluationScore === "number" &&
+            feedback.feedback.evaluationReason &&
+            feedback.feedback.passOrFail &&
+            feedback.feedback.reason
           ) {
             // Firestoreにフィードバック情報を保存
             const feedbackData = {
               good_points_detailed: feedback.feedback.good_points.detailed,
+              good_points_summary: feedback.feedback.good_points.summary,
               improvement_points_detailed: feedback.feedback.improvement_points.detailed,
+              improvement_points_summary: feedback.feedback.improvement_points.summary,
+              evaluationScore: feedback.feedback.evaluationScore,
+              evaluationReason: feedback.feedback.evaluationReason,
+              passOrFail: feedback.feedback.passOrFail,
+              reason: feedback.feedback.reason,
             };
-
+      
             console.log("Saving feedback to Firestore...", feedbackData);
-
+      
             // `saveSessionData`にフィードバックデータを追加して保存
             await saveSessionData(
               sessionId,
@@ -177,7 +204,7 @@ export const processAudio = async (
               conversationHistory,
               feedbackData // フィードバックデータを渡す
             );
-
+      
             console.log("Feedback saved successfully.");
           } else {
             throw new Error("Invalid feedback format.");
