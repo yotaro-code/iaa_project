@@ -55,6 +55,9 @@ dependencies:
   grpc:
   protobuf:
 
+  ## Cloud Run Functions
+  http:
+
   ## Firebase
   firebase_core:
   cloud_firestore:

@@ -6,6 +6,9 @@ class AgentRepository {
 
   AgentRepository(this._firestoreService);
 
+  // ---------------------------------------------
+  // 単発取得メソッド (Futureベース) - 既存
+  // ---------------------------------------------
   // エージェント一覧を取得
   Future<List<Agent>> fetchAgents() async {
     final querySnapshot = await _firestoreService.getCollection('agents');
@@ -31,5 +34,36 @@ class AgentRepository {
       'agents/${agent.agentId}',
       agent.toJson(),
     );
+  }
+
+  // 削除用のメソッド
+  Future<void> deleteAgent(String agentId) async {
+    await _firestoreService.deleteDocument('agents/$agentId');
+  }
+
+  // ---------------------------------------------
+  // リアルタイム購読メソッド (Streamベース) - 追加
+  // ---------------------------------------------
+  /// エージェント一覧をリアルタイムで購読
+  Stream<List<Agent>> streamAgents() {
+    return _firestoreService.streamCollection('agents').map((querySnapshot) {
+      return querySnapshot.docs.map((doc) {
+        return Agent.fromJson(doc.data() as Map<String, dynamic>)
+            .copyWith(agentId: doc.id);
+      }).toList();
+    });
+  }
+
+  /// 特定のエージェントをリアルタイムで購読
+  Stream<Agent?> streamAgent(String agentId) {
+    return _firestoreService
+        .streamDocument('agents/$agentId')
+        .map((docSnapshot) {
+      if (!docSnapshot.exists) {
+        return null;
+      }
+      return Agent.fromJson(docSnapshot.data() as Map<String, dynamic>)
+          .copyWith(agentId: docSnapshot.id);
+    });
   }
 }

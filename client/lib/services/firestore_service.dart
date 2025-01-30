@@ -7,7 +7,11 @@ class FirestoreService {
 
   // コレクション全体を取得
   Future<QuerySnapshot> getCollection(String collectionPath) async {
-    return _firestore.collection(collectionPath).get();
+    return _firestore
+        .collection(collectionPath)
+        .orderBy('lastUpdated', descending: true) // `lastUpdated` の新しい順に取得
+        .get();
+    ;
   }
 
   // ドキュメントを取得
@@ -30,5 +34,18 @@ class FirestoreService {
   // ドキュメントを削除
   Future<void> deleteDocument(String documentPath) async {
     return _firestore.doc(documentPath).delete();
+  }
+
+  // Streamコレクション全体を取得
+  Stream<QuerySnapshot> streamCollection(String collectionPath) {
+    return _firestore
+        .collection(collectionPath)
+        .orderBy('lastUpdated', descending: true)
+        .snapshots();
+  }
+
+  // Streamドキュメントを取得
+  Stream<DocumentSnapshot> streamDocument(String documentPath) {
+    return _firestore.doc(documentPath).snapshots();
   }
 }
