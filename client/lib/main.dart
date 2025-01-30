@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:interview_agents_ai/theme/app_theme.dart';
 import 'firebase_options.dart';
 
+import 'views/add_agent_page.dart';
 import 'views/agent_list_page.dart';
 import 'views/interview_page.dart';
 import 'views/feedback_page.dart';
@@ -66,6 +67,11 @@ final _router = GoRouter(
                 final sessionId = state.pathParameters['sessionId']!;
                 return FeedbackPage(agentId: agentId, sessionId: sessionId);
               },
+            ),
+            // エージェント追加画面
+            GoRoute(
+              path: 'add',
+              builder: (context, state) => AddAgentPage(),
             ),
           ],
         ),
