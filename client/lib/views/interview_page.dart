@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:interview_agents_ai/models/interview_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import '../viewmodels/interview_view_model.dart';
 import '../viewmodels/agent_viewmodel.dart';
 
@@ -24,16 +24,33 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _animationController;
+  double _opacity = 0.8; // 初期値は0.8
 
   @override
   void initState() {
     super.initState();
 
+    // 再生完了時のリスナー
+    _audioPlayer.playerStateStream.listen((playerState) {
+      if (playerState.processingState == ProcessingState.completed) {
+        final viewModelNotifier =
+            ref.read(interviewViewModelProvider(widget.agentId).notifier);
+        viewModelNotifier.updateState(
+            isAgentSpeaking: false, isRecording: false, isRequesting: false);
+      }
+    });
+
     // アニメーションコントローラーの初期化
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
+    )..addListener(() {
+        setState(() {
+          // 透明度を0.5から1.0の間で変化させる
+          _opacity = 0.5 + (0.5 * _animationController.value);
+        });
+      });
+    _animationController.repeat(reverse: true);
 
     // 初期化処理を非同期で実行
     Future.microtask(() {
@@ -51,27 +68,23 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
     super.dispose();
   }
 
-  /// 音声を再生
+  /// 音声を再生（Uint8List の音声データを `just_audio` で再生）
   Future<void> _playAudio(Uint8List audioData) async {
     try {
       final viewModelNotifier =
           ref.read(interviewViewModelProvider(widget.agentId).notifier);
 
-      // 音声再生前に状態を更新
       viewModelNotifier.updateState(
           isAgentSpeaking: true, isRecording: false, isRequesting: false);
 
+      // 一時ファイルに保存
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/temp_audio.mp3');
       await tempFile.writeAsBytes(audioData);
 
-      await _audioPlayer.play(DeviceFileSource(tempFile.path));
-
-      // 再生終了後の処理
-      _audioPlayer.onPlayerComplete.listen((_) {
-        viewModelNotifier.updateState(
-            isAgentSpeaking: false, isRecording: false, isRequesting: false);
-      });
+      // JustAudio に音声ファイルをセット
+      await _audioPlayer.setFilePath(tempFile.path);
+      await _audioPlayer.play(); // 再生開始
     } catch (e) {
       print('音声再生中にエラーが発生しました: $e');
     }
@@ -153,10 +166,12 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
         if (next.isFinalRound &&
             next.responseAudioData != null &&
             next.responseAudioData != previous?.responseAudioData) {
-          _audioPlayer.onPlayerComplete.listen((_) {
-            context.go(
-              '/agents/feedback/${widget.agentId}/${next.sessionId}',
-            );
+          _audioPlayer.playerStateStream.listen((playerState) {
+            if (playerState.processingState == ProcessingState.completed) {
+              context.go(
+                '/agents/feedback/${widget.agentId}/${next.sessionId}',
+              );
+            }
           });
         }
       },
@@ -203,12 +218,20 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                             );
                           },
                         ),
-                      CircleAvatar(
-                        radius: 100,
-                        backgroundImage: agent.imageUrl != null
-                            ? NetworkImage(agent.imageUrl!)
-                            : const AssetImage('assets/placeholder.png')
-                                as ImageProvider,
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 500),
+                        opacity: (!viewModel.isAgentSpeaking &&
+                                !viewModel.isRecording &&
+                                viewModel.isRequesting)
+                            ? _opacity // アニメーションで変化
+                            : 1.0, // その他の場合は透明度1.0
+                        child: CircleAvatar(
+                          radius: 100,
+                          backgroundImage: agent.imageUrl != null
+                              ? NetworkImage(agent.imageUrl!)
+                              : const AssetImage('assets/placeholder.png')
+                                  as ImageProvider,
+                        ),
                       ),
                     ],
                   ),

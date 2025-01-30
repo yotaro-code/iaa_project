@@ -71,6 +71,63 @@ class FeedbackPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                buildDivider(),
+
+                // 評価結果
+                const Text(
+                  '評価結果',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // 合否結果と星評価を横並びで表示
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center, // 中央揃え
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        feedback.feedback.passOrFail,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: feedback.feedback.passOrFail == '合格'
+                              ? Colors.green
+                              : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(width: 8), // 間隔を調整
+
+                      // 星評価（5段階）
+                      Row(
+                        children: List.generate(
+                          5,
+                          (index) => Icon(
+                            index < feedback.feedback.evaluationScore
+                                ? Icons.star
+                                : Icons.star_border,
+                            color: Colors.amber[700], // 濃い黄色
+                            size: 28, // 少し大きく
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+// 評価理由
+                Text(
+                  feedback.feedback.reason,
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                buildDivider(),
 
                 // 良かった点
                 const Text(
@@ -87,6 +144,8 @@ class FeedbackPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
+                buildDivider(),
+
                 // 改善点
                 const Text(
                   '改善点',
@@ -102,6 +161,7 @@ class FeedbackPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
+                buildDivider(),
                 // インタビュー履歴
                 const Text(
                   'インタビュー履歴',
@@ -120,8 +180,8 @@ class FeedbackPage extends ConsumerWidget {
                         children: [
                           Text(
                             history.role == 'interviewer'
-                                ? '👤'
-                                : '🗣️', // アイコンでロールを表示
+                                ? 'Q. '
+                                : 'A. ', // アイコンでロールを表示
                             style: const TextStyle(fontSize: 16),
                           ),
                           const SizedBox(width: 8),
@@ -147,4 +207,18 @@ class FeedbackPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+Widget buildDivider() {
+  return Container(
+    decoration: const BoxDecoration(
+      border: Border(
+        bottom: BorderSide(
+          color: Colors.grey, // 区切り線の色
+          width: 0.5, // 区切り線の太さ
+        ),
+      ),
+    ),
+    margin: const EdgeInsets.symmetric(vertical: 12), // 上下の余白
+  );
 }
