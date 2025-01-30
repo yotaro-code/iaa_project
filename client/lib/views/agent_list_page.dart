@@ -78,6 +78,15 @@ class AgentListPage extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('エラーが発生しました: $e')),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push('/agents/add'); // 追加画面へ遷移
+        },
+        elevation: 0, // 影なし
+        child: const Icon(Icons.add, size: 28), // "+" アイコン
+      ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.endFloat, // 右下に配置
     );
   }
 }

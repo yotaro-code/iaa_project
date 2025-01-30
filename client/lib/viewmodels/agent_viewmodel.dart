@@ -7,17 +7,16 @@ part 'agent_viewmodel.g.dart';
 
 @riverpod
 class AgentViewModel extends _$AgentViewModel {
-  // 状態の初期化
+  /// ビルドメソッドをストリームベースに変更
   @override
-  Future<List<Agent>> build() async {
-    return await fetchAgents();
+  Stream<List<Agent>> build() {
+    print("AgentViewModel: Listening to streamAgents");
+    final agentRepository = ref.watch(agentRepositoryProvider);
+    return agentRepository.streamAgents();
   }
 
-  // エージェント一覧を取得
-  Future<List<Agent>> fetchAgents() async {
-    print("call fetchAgents");
+  Future<void> deleteAgent(String agentId) async {
     final agentRepository = ref.read(agentRepositoryProvider);
-    print(agentRepository.fetchAgents());
-    return await agentRepository.fetchAgents();
+    await agentRepository.deleteAgent(agentId);
   }
 }
