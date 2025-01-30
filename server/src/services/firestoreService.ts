@@ -5,12 +5,20 @@ const firestore = new Firestore();
 
 /**
  * セッションデータを保存
- * @param sessionId セッションID
- * @param agentId エージェントID
- * @param userId ユーザーID
- * @param currentRound 現在のラウンド番号
- * @param conversationHistory 会話履歴
- * @param feedback フィードバック情報
+ * @param sessionId セッションID（ユニークなセッション識別子）
+ * @param agentId エージェントID（エージェントを特定するID）
+ * @param userId ユーザーID（ユーザーを特定するID）
+ * @param currentRound 現在のラウンド番号（1から開始するインタビューの進行状況）
+ * @param conversationHistory 会話履歴（面接官とユーザー間のメッセージの配列）
+ * @param feedback フィードバック情報（良かった点、改善点、評価スコア、合否理由を含むオブジェクト）
+ *    - good_points_detailed: 良かった点の詳細（500文字以内）
+ *    - good_points_summary: 良かった点の要約（100文字以内）
+ *    - improvement_points_detailed: 改善点の詳細（500文字以内）
+ *    - improvement_points_summary: 改善点の要約（100文字以内）
+ *    - evaluationScore: 評価スコア（1=非常に不十分 ～ 5=非常に優れている）
+ *    - evaluationReason: 評価理由（なぜそのスコアにしたのかを説明）
+ *    - passOrFail: 合否結果（"合格" または "不合格"）
+ *    - reason: 合否の理由（合否に至った理由を具体的に記載）
  */
 export const saveSessionData = async (
   sessionId: string,
@@ -18,9 +26,24 @@ export const saveSessionData = async (
   userId: string,
   currentRound: number,
   conversationHistory: Array<{ role: string; message: string; audioData?: string }>,
-  feedback: { good_points_detailed: string; improvement_points_detailed: string } = { 
-    good_points_detailed: "", 
-    improvement_points_detailed: "" // 初期値として空文字列を設定
+  feedback: {
+    good_points_detailed: string;
+    good_points_summary: string;
+    improvement_points_detailed: string;
+    improvement_points_summary: string;
+    evaluationScore: number | null; // 評価スコア（null 初期値許容）
+    evaluationReason: string;
+    passOrFail: string;
+    reason: string;
+  } = {
+    good_points_detailed: "",
+    good_points_summary: "",
+    improvement_points_detailed: "",
+    improvement_points_summary: "",
+    evaluationScore: null,
+    evaluationReason: "",
+    passOrFail: "",
+    reason: "",
   }
 ): Promise<void> => {
   const sessionRef = firestore.collection("sessions").doc(sessionId);
@@ -37,6 +60,7 @@ export const saveSessionData = async (
 
   await sessionRef.set(data, { merge: true });
 };
+
 
 
 /**
