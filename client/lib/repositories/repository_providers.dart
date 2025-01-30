@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:interview_agents_ai/repositories/add_agent_repository.dart';
 import '../services/grpc_service.dart';
 import 'agent_repository.dart';
 import '../services/firestore_service.dart';
@@ -33,4 +34,12 @@ final interviewRepositoryProvider = Provider<InterviewRepository>((ref) {
 final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
   final firestoreService = ref.read(firestoreServiceProvider);
   return FeedbackRepository(firestoreService);
+});
+
+// addAgentRepositoryProviderプロバイダー
+const String baseUrl =
+    'https://asia-northeast1-carbon-crossing-446001-p7.cloudfunctions.net/generateAgents';
+
+final addAgentRepositoryProvider = Provider<AddAgentRepository>((ref) {
+  return AddAgentRepository(baseUrl);
 });
