@@ -1,0 +1,31 @@
+# Node.js関連
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript関連
+dist/
+*.tsbuildinfo
+
+# 環境設定
+.env
+.DS_Store
+
+# Firebase/Google Cloud関連
+service-account.json
+
+# IDE関連
+.vscode/
+.idea/
+*.swp
+
+# MacOS関連
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
