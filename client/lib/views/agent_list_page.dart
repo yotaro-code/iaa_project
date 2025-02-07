@@ -9,7 +9,7 @@ class AgentListPage extends ConsumerWidget {
     final agentsAsyncValue = ref.watch(agentViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('エージェント一覧')),
+      appBar: AppBar(title: const Text('Interview Agents')),
       body: agentsAsyncValue.when(
         data: (agents) {
           return ListView.builder(
@@ -36,12 +36,17 @@ class AgentListPage extends ConsumerWidget {
                     children: [
                       // 左側: 画像
                       ClipOval(
-                        child: Image.network(
-                          agent.imageUrl ??
-                              'https://via.placeholder.com/80', // 画像URLがない場合の仮画像
-                          width: 80.0, // 円形の幅
-                          height: 80.0, // 円形の高さ
-                          fit: BoxFit.cover, // 画像の表示方法
+                        child: Container(
+                          color: Colors.white, // 背景を白に設定
+                          width: 80.0, // 直径
+                          height: 80.0, // 直径
+                          child: Image.network(
+                            agent.imageUrl ??
+                                'https://via.placeholder.com/80', // 画像URLがない場合の仮画像
+                            width: 80.0, // 円形の幅
+                            height: 80.0, // 円形の高さ
+                            fit: BoxFit.contain, // 画像の表示方法
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16.0),
