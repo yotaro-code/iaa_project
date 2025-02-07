@@ -5,52 +5,55 @@ import { protos } from "@google-cloud/speech";
 const client = new SpeechClient();
 
 /**
- * 音声データをテキストに変換
- * @param audioData 音声データ（Buffer形式）
- * @returns テキストに変換された文字列
+ * 音声データをストリームでテキストに変換
+ * @param audioStream ストリーム化された音声データ（BufferのReadableStream）
+ * @returns リアルタイムで受信するテキストのPromise
  */
-export const convertSpeechToText = async (audioData: Buffer): Promise<string> => {
-  try {
-    // Speech-to-Text APIのリクエスト構造を定義
-    const request: protos.google.cloud.speech.v1.IRecognizeRequest = {
-      audio: {
-        content: audioData.toString("base64"), // 音声データをBase64形式に変換
-      },
+export const convertSpeechToTextStream = (audioStream: NodeJS.ReadableStream): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    let finalTranscription = "";
+
+    console.log("🟠 [STT] Initializing Speech-to-Text stream...");
+
+    const recognizeStream = client.streamingRecognize({
       config: {
-        encoding: protos.google.cloud.speech.v1.RecognitionConfig.AudioEncoding.LINEAR16, // 型を明示
+        encoding: protos.google.cloud.speech.v1.RecognitionConfig.AudioEncoding.LINEAR16,
         sampleRateHertz: 16000,
-        languageCode: "ja-JP", // 日本語で変換
+        languageCode: "ja-JP",
       },
-    };
+      interimResults: true, // 途中結果も取得 (ただし最終結果のみ使う)
+    });
 
-    // リクエストの詳細をログに出力
-    console.log("Speech-to-Text API Request Config:", JSON.stringify(request.config, null, 2));
-    console.log("Audio Data Length (Base64):", request.audio?.content?.length);
+    recognizeStream
+      .on("error", (error) => {
+        console.error("❌ [STT ERROR] Speech-to-Text Stream Error:", error);
+        reject(error);
+      })
+      .on("data", (data) => {
+        if (data.results && data.results[0] && data.results[0].alternatives[0]) {
+          const resultText = data.results[0].alternatives[0].transcript;
+          const isFinal = data.results[0].isFinal; // 最終結果かどうかのフラグ
 
-    // Speech-to-Text APIを呼び出して音声をテキストに変換
-    const [response] = await client.recognize(request);
+          if (isFinal) {
+            finalTranscription = resultText; // 途中結果を蓄積せず、最終結果だけを保存
+            console.log(`🔴 [STT FINAL] Final transcription updated: "${finalTranscription}"`);
+          } else {
+            console.log(`🟢 [STT PARTIAL] Partial transcription: "${resultText}"`);
+          }
+        }
+      })
+      .on("end", () => {
+        console.log(`🔴 [STT FINAL] Transcription result: "${finalTranscription}"`);
+        resolve(finalTranscription.trim());
+      });
 
-    // APIの結果をログに出力
-    console.log("Speech-to-Text API Response:", JSON.stringify(response, null, 2));
+    console.log("🟡 [STT] Connecting audio stream to STT...");
 
-    // APIの結果からテキストを抽出
-    const transcription = response.results
-      ?.map((result) => result.alternatives?.[0]?.transcript || "")
-      .join(" ");
-
-    if (!transcription) {
-      console.error("No transcription found in response.");
-      throw new Error("Failed to transcribe audio");
-    }
-
-    console.log("Transcription Result:", transcription);
-
-    return transcription;
-  } catch (error) {
-    // エラー時の詳細ログを出力
-    console.error("Error converting speech to text:");
-    console.error("Error Message:", error || error);
-
-    throw new Error("Speech-to-Text processing failed");
-  }
+    // **手動で write せずに、pipe でデータを流す**
+    audioStream.pipe(recognizeStream);
+  });
 };
+
+
+
+
