@@ -1,9 +1,7 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
-import '../repositories/interview_repository.dart';
 import '../models/interview_model.dart';
 import '../repositories/repository_providers.dart';
 
@@ -11,50 +9,109 @@ part 'interview_view_model.g.dart';
 
 @riverpod
 class InterviewViewModel extends _$InterviewViewModel {
+  StreamController<Uint8List>? _recordingStreamController;
+  StreamController<Uint8List>? _responseStreamController;
+
   @override
   InterviewState build(String agentId) {
+    _recordingStreamController = StreamController<Uint8List>.broadcast();
+    _responseStreamController = StreamController<Uint8List>.broadcast();
+
     return InterviewState(
-      sessionId: '', // 初期値を空文字列に設定
+      sessionId: '',
       userId: const Uuid().v4(),
       agentId: agentId,
       isAgentSpeaking: false,
       isRecording: false,
       isRequesting: true,
-      currentRound: 0,
+      currentRound: 1,
       isFinalRound: false,
       requestAudioData: null,
       responseAudioData: null,
     );
   }
 
-  /// セッションを初期化してサーバーから初期音声データを取得
+  Stream<Uint8List> get responseAudioStream =>
+      _responseStreamController!.stream;
+
+  /// **セッションを初期化し、サーバーから初回音声データをリアルタイムで受信**
   Future<void> initializeSession() async {
     final repository = ref.read(interviewRepositoryProvider);
 
     try {
-      // サーバーへ初期化リクエストを送信
-      final response = await repository.initializeSession(
+      final responseStream = repository.initializeSession(
         agentId: state.agentId,
         userId: state.userId,
       );
 
-      final nextRound = state.currentRound + 1;
+      bool isFirstResponse = true;
 
-      // 状態を更新
-      print("updateState");
-      state = state.copyWith(
-        currentRound: nextRound,
-        sessionId: response.sessionId,
-        isRequesting: false,
-        responseAudioData:
-            Uint8List.fromList(response.initialAudioData), // 初期音声データ
-      );
+      await for (final response in responseStream) {
+        state = state.copyWith(
+          sessionId: response.sessionId,
+          isRequesting: false,
+          responseAudioData: response.audioData,
+        );
+
+        _responseStreamController?.add(response.audioData);
+
+        isFirstResponse = false;
+      }
     } catch (e) {
       throw Exception('セッション初期化中にエラーが発生しました: $e');
     }
   }
 
-  /// 状態を更新するヘルパーメソッド
+  /// **音声ストリームを開始し、サーバーにリアルタイム送信**
+  void startAudioStream({required String agentId, required int maxRounds}) {
+    // 既存のストリームがある場合は閉じる
+    _recordingStreamController?.close();
+
+    // **新しい StreamController を作成**
+    _recordingStreamController = StreamController<Uint8List>();
+
+    final repository = ref.read(interviewRepositoryProvider);
+
+    final responseStream = repository.sendAudioData(
+      sessionId: state.sessionId,
+      agentId: agentId,
+      userId: state.userId,
+      currentRound: state.currentRound,
+      audioStream: _recordingStreamController!.stream,
+    );
+
+    responseStream.listen(
+      (audioData) {
+        _responseStreamController?.add(audioData);
+
+        state = state.copyWith(
+          responseAudioData: audioData,
+        );
+      },
+      onDone: () {
+        final nextRound = state.currentRound + 1;
+        state = state.copyWith(
+          currentRound: nextRound,
+          isFinalRound: nextRound > maxRounds, // maxRoundsで最終ラウンド判定
+        );
+        print("サーバーのレスポンスストリームが完了しました！");
+      },
+    );
+  }
+
+  /// **録音したデータをストリームで送信**
+  void sendAudioChunk(Uint8List audioData) {
+    _recordingStreamController?.add(audioData);
+  }
+
+  /// **録音したデータをストリームを終了**
+  void endAudioStream() {
+    print("サーバーへの音声ストリーム送信を終了します");
+    _recordingStreamController?.close(); // **ストリームを閉じる**
+    _recordingStreamController = null; // **次の録音のために `null` にする**
+  }
+
+  /// **状態を更新**
   void updateState({
     bool? isAgentSpeaking,
     bool? isRecording,
@@ -64,7 +121,6 @@ class InterviewViewModel extends _$InterviewViewModel {
     Uint8List? requestAudioData,
     Uint8List? responseAudioData,
   }) {
-    print("updateState");
     state = state.copyWith(
       isAgentSpeaking: isAgentSpeaking ?? state.isAgentSpeaking,
       isRecording: isRecording ?? state.isRecording,
@@ -76,87 +132,13 @@ class InterviewViewModel extends _$InterviewViewModel {
     );
   }
 
-  /// サーバーから音声データを取得
-  Future<void> fetchServerAudio() async {
-    state = state.copyWith(isAgentSpeaking: true);
-    print('isAgentSpeaking: ${state.isAgentSpeaking}');
-
-    final repository = ref.read(interviewRepositoryProvider);
-
-    try {
-      final audioData = await repository.sendAudioData(
-        sessionId: state.sessionId,
-        agentId: state.agentId,
-        userId: state.userId,
-        currentRound: state.currentRound,
-      );
-
-      print("updateState");
-      state = state.copyWith(
-        //isAgentSpeaking: false,
-        responseAudioData: Uint8List.fromList(audioData), // サーバーからの音声データを格納
-      );
-    } catch (e) {
-      print("updateState");
-      state = state.copyWith(isAgentSpeaking: false);
-      throw Exception('サーバー音声取得中にエラーが発生しました: $e');
-    }
-  }
-
-  /// ユーザーの音声データをサーバーに送信
-  Future<void> sendAudio(Uint8List audioData, int maxRounds) async {
-    print("updateState");
-    state = state.copyWith(
-      isRecording: false,
-      requestAudioData: audioData, // 録音したデータを格納
-    );
-
-    print('audioData');
-    print(audioData.runtimeType);
-    print(audioData);
-
-    print('Audio Data Length: ${audioData.length}');
-    print('Audio Data Preview: ${audioData.sublist(0, 20)}');
-
-    // ViewModel上で先にaudioを一時保存しておく
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/temp_audio.mp3');
-    await tempFile.writeAsBytes(audioData);
-
-    final repository = ref.read(interviewRepositoryProvider);
-
-    try {
-      final serverAudioData = await repository.sendAudioData(
-        sessionId: state.sessionId,
-        agentId: state.agentId,
-        userId: state.userId,
-        currentRound: state.currentRound,
-        audioData: audioData,
-      );
-
-      final nextRound = state.currentRound + 1;
-
-      print("updateState");
-      state = state.copyWith(
-        currentRound: nextRound,
-        responseAudioData:
-            Uint8List.fromList(serverAudioData), // サーバーからの音声データを格納
-        isFinalRound: nextRound > maxRounds, // maxRoundsで最終ラウンド判定
-      );
-    } catch (e) {
-      throw Exception('音声送信中にエラーが発生しました: $e');
-    }
-  }
-
-  /// 録音開始
+  /// **録音開始**
   void startRecording() {
-    print("updateState");
     state = state.copyWith(isRecording: true);
   }
 
-  /// 録音停止
+  /// **録音停止**
   void stopRecording() {
-    print("updateState");
     state = state.copyWith(isRecording: false);
   }
 }
