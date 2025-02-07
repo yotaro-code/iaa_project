@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:interview_agents_ai/models/interview_model.dart';
+import 'package:interview_agents_ai/services/audio_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:just_audio/just_audio.dart';
+import '../models/interview_model.dart';
 import '../viewmodels/interview_view_model.dart';
 import '../viewmodels/agent_viewmodel.dart';
 
@@ -25,6 +27,10 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
   final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _animationController;
   double _opacity = 0.8; // 初期値は0.8
+  StreamSubscription<Uint8List>? _audioStreamSubscription;
+
+  bool _isFinalRound = false;
+  String? _finalSessionId;
 
   @override
   void initState() {
@@ -37,6 +43,14 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
             ref.read(interviewViewModelProvider(widget.agentId).notifier);
         viewModelNotifier.updateState(
             isAgentSpeaking: false, isRecording: false, isRequesting: false);
+
+        if (playerState.processingState == ProcessingState.completed) {
+          // ここでStateが持っている最終ラウンドフラグを確認
+          if (_isFinalRound && _finalSessionId != null) {
+            // 最終ラウンドがtrueなら画面遷移
+            context.go('/agents/feedback/${widget.agentId}/$_finalSessionId');
+          }
+        }
       }
     });
 
@@ -46,17 +60,23 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
       duration: const Duration(seconds: 1),
     )..addListener(() {
         setState(() {
-          // 透明度を0.5から1.0の間で変化させる
           _opacity = 0.5 + (0.5 * _animationController.value);
         });
       });
     _animationController.repeat(reverse: true);
 
-    // 初期化処理を非同期で実行
+    // 初期化処理を実行
     Future.microtask(() {
-      ref
-          .read(interviewViewModelProvider(widget.agentId).notifier)
-          .initializeSession();
+      final viewModelNotifier =
+          ref.read(interviewViewModelProvider(widget.agentId).notifier);
+
+      viewModelNotifier.initializeSession();
+
+      // サーバーからの音声ストリームを購読し、リアルタイム再生
+      _audioStreamSubscription =
+          viewModelNotifier.responseAudioStream.listen((audioData) async {
+        await _playAudio(audioData);
+      });
     });
   }
 
@@ -65,52 +85,49 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
     _animationController.dispose();
     _recorder.dispose();
     _audioPlayer.dispose();
+    _audioStreamSubscription?.cancel();
     super.dispose();
   }
 
-  /// 音声を再生（Uint8List の音声データを `just_audio` で再生）
+  /// **音声をメモリから直接再生 (ストリーム対応)**
   Future<void> _playAudio(Uint8List audioData) async {
     try {
       final viewModelNotifier =
           ref.read(interviewViewModelProvider(widget.agentId).notifier);
+      viewModelNotifier.updateState(isAgentSpeaking: true);
 
-      viewModelNotifier.updateState(
-          isAgentSpeaking: true, isRecording: false, isRequesting: false);
-
-      // 一時ファイルに保存
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/temp_audio.mp3');
-      await tempFile.writeAsBytes(audioData);
-
-      // JustAudio に音声ファイルをセット
-      await _audioPlayer.setFilePath(tempFile.path);
-      await _audioPlayer.play(); // 再生開始
+      await _audioPlayer.setAudioSource(MemoryAudioSource(audioData));
+      await _audioPlayer.play();
     } catch (e) {
       print('音声再生中にエラーが発生しました: $e');
     }
   }
 
-  /// 録音を開始 (WAVフォーマットで保存)
-  Future<void> startRecording() async {
+  /// **録音開始 (ストリームで送信)**
+  Future<void> startRecording(maxRounds) async {
     try {
       if (await _recorder.hasPermission()) {
         final viewModelNotifier =
             ref.read(interviewViewModelProvider(widget.agentId).notifier);
-        final tempDir = await getTemporaryDirectory();
-        final filePath = '${tempDir.path}/recorded_audio.wav';
 
-        await _recorder.start(
+        // gRPC の音声ストリーム開始
+        viewModelNotifier.startAudioStream(
+            agentId: widget.agentId, maxRounds: maxRounds);
+
+        // `startStream()` を使用してストリームをリッスン（16kHz, 1チャンネル）
+        final stream = await _recorder.startStream(
           const RecordConfig(
-            encoder: AudioEncoder.wav,
-            sampleRate: 16000,
-            numChannels: 1,
+            encoder: AudioEncoder.pcm16bits, // PCM 16bit エンコーダー
+            sampleRate: 16000, // サンプリングレートを 16kHz に設定
+            numChannels: 1, // 1チャンネル（モノラル）
           ),
-          path: filePath,
         );
 
-        viewModelNotifier.updateState(
-            isAgentSpeaking: false, isRecording: true, isRequesting: false);
-        print('録音を開始しました: $filePath');
+        stream.listen((audioData) {
+          viewModelNotifier.sendAudioChunk(Uint8List.fromList(audioData));
+        });
+
+        viewModelNotifier.updateState(isRecording: true);
       } else {
         print('録音の権限がありません');
       }
@@ -119,63 +136,30 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
     }
   }
 
-  /// 録音を停止し、WAVデータを返す
-  Future<Uint8List?> stopRecording() async {
+  /// **録音を停止**
+  Future<void> stopRecording() async {
     try {
+      await _recorder.stop();
       final viewModelNotifier =
           ref.read(interviewViewModelProvider(widget.agentId).notifier);
 
-      final recordedFilePath = await _recorder.stop();
-      if (recordedFilePath != null) {
-        final recordedFile = File(recordedFilePath);
-        final fileBytes = await recordedFile.readAsBytes();
-        viewModelNotifier.updateState(
-            isAgentSpeaking: false, isRecording: false, isRequesting: true);
-        return fileBytes;
-      } else {
-        print('録音停止後のファイルパスが取得できません');
-      }
+      viewModelNotifier.endAudioStream(); // ストリーム終了を通知
+
+      viewModelNotifier.updateState(
+          isAgentSpeaking: false, isRecording: false, isRequesting: true);
     } catch (e) {
       print('録音停止中にエラーが発生しました: $e');
     }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = ref.watch(interviewViewModelProvider(widget.agentId));
-    final viewModelNotifier =
-        ref.read(interviewViewModelProvider(widget.agentId).notifier);
 
-    // エージェント情報を取得
+    _isFinalRound = viewModel.isFinalRound;
+    _finalSessionId = viewModel.sessionId;
+
     final agentAsyncValue = ref.watch(agentViewModelProvider);
-
-    // リスナーをbuildメソッド内に移動
-    ref.listen<InterviewState>(
-      interviewViewModelProvider(widget.agentId),
-      (previous, next) async {
-        if (next.responseAudioData != null &&
-            next.responseAudioData != previous?.responseAudioData) {
-          // 音声データが更新されたら再生
-          print("以下音声データの中身");
-          print(next.responseAudioData!);
-          await _playAudio(next.responseAudioData!);
-        }
-
-        // 最終ラウンドでの処理
-        if (next.isFinalRound &&
-            next.responseAudioData != null &&
-            next.responseAudioData != previous?.responseAudioData) {
-          _audioPlayer.playerStateStream.listen((playerState) {
-            if (playerState.processingState == ProcessingState.completed) {
-              context.go(
-                '/agents/feedback/${widget.agentId}/${next.sessionId}',
-              );
-            }
-          });
-        }
-      },
-    );
 
     return agentAsyncValue.when(
       data: (agents) {
@@ -188,10 +172,16 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  agent.name,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0), // 左右に16pxの余白を追加
+                  child: Text(
+                    agent.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 50),
                 SizedBox(
@@ -203,7 +193,6 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                       if (viewModel.isAgentSpeaking &&
                           !viewModel.isRecording &&
                           !viewModel.isRequesting)
-                        // isAgentSpeaking: true の場合のアニメーション
                         AnimatedBuilder(
                           animation: _animationController,
                           builder: (context, child) {
@@ -223,14 +212,23 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                         opacity: (!viewModel.isAgentSpeaking &&
                                 !viewModel.isRecording &&
                                 viewModel.isRequesting)
-                            ? _opacity // アニメーションで変化
-                            : 1.0, // その他の場合は透明度1.0
-                        child: CircleAvatar(
-                          radius: 100,
-                          backgroundImage: agent.imageUrl != null
-                              ? NetworkImage(agent.imageUrl!)
-                              : const AssetImage('assets/placeholder.png')
-                                  as ImageProvider,
+                            ? _opacity
+                            : 1.0,
+                        child: ClipOval(
+                          child: Container(
+                            color: Colors.white, // 背景を白に設定
+                            width: 200, // 直径
+                            height: 200, // 直径
+                            child: FittedBox(
+                              fit: BoxFit.contain, // 画像が枠内に収まるように調整
+                              child: Image.network(
+                                agent.imageUrl ??
+                                    'https://via.placeholder.com/80',
+                                width: 200, // 直径
+                                height: 200, // 直径
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -243,7 +241,6 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // isRecording: true の場合のアニメーション
                       if (!viewModel.isAgentSpeaking &&
                           viewModel.isRecording &&
                           !viewModel.isRequesting)
@@ -261,19 +258,13 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                             );
                           },
                         ),
-                      // ボタン本体
                       ElevatedButton(
                         onPressed: () async {
                           if (viewModel.isRecording) {
-                            final recordedAudioData = await stopRecording();
-                            if (recordedAudioData != null) {
-                              await viewModelNotifier.sendAudio(
-                                  recordedAudioData, agent.maxRounds);
-                            }
+                            await stopRecording();
                           } else if (!viewModel.isAgentSpeaking &&
                               !viewModel.isRequesting) {
-                            await startRecording();
-                            viewModelNotifier.startRecording();
+                            await startRecording(agent.maxRounds);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -294,7 +285,7 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),
