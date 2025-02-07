@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package texttospeech;
+
+service TextToSpeech {
+  // テキストを音声データに変換するメソッド
+  rpc SynthesizeSpeech(SynthesizeSpeechRequest) returns (SynthesizeSpeechResponse);
+}
+
+message SynthesizeSpeechRequest {
+  string text = 1; // 必須: 音声に変換するテキスト
+  VoiceSelectionParams voice = 2; // 音声選択パラメータ
+  AudioConfig audio_config = 3; // 音声出力設定
+}
+
+message SynthesizeSpeechResponse {
+  bytes audio_content = 1; // 生成された音声データ
+}
+
+message VoiceSelectionParams {
+  string language_code = 1; // 必須: 言語コード（例: "ja-JP"）
+  string name = 2; // 任意: 声の名前（例: "ja-JP-Wavenet-C"）
+  SsmlVoiceGender ssml_gender = 3; // 任意: 性別
+}
+
+message AudioConfig {
+  AudioEncoding audio_encoding = 1; // 必須: エンコーディング形式
+  double speaking_rate = 2; // 任意: 話す速度
+  double pitch = 3; // 任意: 声の高さ
+}
+
+enum SsmlVoiceGender {
+  SSML_VOICE_GENDER_UNSPECIFIED = 0; // 未指定
+  MALE = 1; // 男性
+  FEMALE = 2; // 女性
+  NEUTRAL = 3; // 中性的
+}
+
+enum AudioEncoding {
+  AUDIO_ENCODING_UNSPECIFIED = 0; // 未指定
+  LINEAR16 = 1; // WAV形式
+  MP3 = 2; // MP3形式
+  OGG_OPUS = 3; // 高圧縮フォーマット
+}
