@@ -40,11 +40,11 @@ export const generatePrompt = async (
       feedbackTemplate,
     } = agentData;
 
-    // 会話履歴を文字列に変換
+    // 会話履歴を文字列に変換し、末尾に最新のユーザー回答を追加
     const historyText =
       conversationHistory.length > 0
-        ? conversationHistory.map((c, index) => `${index % 2 === 0 ? "Q" : "A"}. ${c.message}`).join("\n")
-        : "初回のため無し";
+        ? conversationHistory.map((c, index) => `${index % 2 === 0 ? "Q" : "A"}. ${c.message}`).join("\n") + `A. ${userText}`
+        : `初回のため無し\nA. ${userText}`;
 
     // プロンプトの初期値
     let prompt = "";
@@ -97,9 +97,12 @@ export const generatePrompt = async (
         - ${feedbackTemplate.guidance}
         - ガイドライン:
           ${feedbackTemplate.points.map((point, index) => `${index + 1}. ${point}`).join("\n")}
+        - 合格にする条件:
+          ${feedbackTemplate.summary}
     
         #### 条件:
-        1. 良かった点と改善点をそれぞれ詳細（300文字以内）と要約（100文字以内）で記述してください。
+        0. 「フィードバックの指示」に従って、以下の条件を基にフィードバックをします。
+        1. 良かった点と改善点をそれぞれ詳細（200文字以内）と要約（50文字以内）で記述してください。
         2. 会話履歴から評価を5段階（1=非常に不十分、2=不十分、3=普通、4=優れている、5=非常に優れている）で行ってください。
         3. 評価理由を200文字以内で具体的に説明してください。
         4. 面接結果（合格または不合格）を記載してください。
@@ -111,12 +114,12 @@ export const generatePrompt = async (
         {
           "feedback": {
             "good_points": {
-              "detailed": "ここに良かった点の詳細を記載します。300文字以内",
-              "summary": "ここに良かった点の要約を記載します。100文字以内"
+              "detailed": "ここに良かった点の詳細を記載します。特にユーザの気付けていない強みを中心にまとめてください。200文字以内",
+              "summary": "ここに良かった点の要約を記載します。特にユーザの気付けていない強みを中心にまとめてください。50文字以内"
             },
             "improvement_points": {
-              "detailed": "ここに改善点の詳細を記載します。300文字以内",
-              "summary": "ここに改善点の要約を記載します。100文字以内"
+              "detailed": "ここに改善点の詳細を記載します。200文字以内",
+              "summary": "ここに改善点の要約を記載します。50文字以内"
             },
             "evaluationScore": 4, // 1=非常に不十分 ～ 5=非常に優れている
             "evaluationReason": "ここに評価理由を記載します。",
