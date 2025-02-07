@@ -21,14 +21,14 @@ export 'audio.pb.dart';
 
 @$pb.GrpcServiceName('audio.AudioService')
 class AudioServiceClient extends $grpc.Client {
-  static final _$processAudio = $grpc.ClientMethod<$0.AudioRequest, $0.AudioResponse>(
-      '/audio.AudioService/ProcessAudio',
-      ($0.AudioRequest value) => value.writeToBuffer(),
-      ($core.List<$core.int> value) => $0.AudioResponse.fromBuffer(value));
   static final _$initializeSession = $grpc.ClientMethod<$0.InitializeRequest, $0.InitializeResponse>(
       '/audio.AudioService/InitializeSession',
       ($0.InitializeRequest value) => value.writeToBuffer(),
       ($core.List<$core.int> value) => $0.InitializeResponse.fromBuffer(value));
+  static final _$processAudio = $grpc.ClientMethod<$0.AudioRequest, $0.AudioResponse>(
+      '/audio.AudioService/ProcessAudio',
+      ($0.AudioRequest value) => value.writeToBuffer(),
+      ($core.List<$core.int> value) => $0.AudioResponse.fromBuffer(value));
 
   AudioServiceClient($grpc.ClientChannel channel,
       {$grpc.CallOptions? options,
@@ -36,12 +36,12 @@ class AudioServiceClient extends $grpc.Client {
       : super(channel, options: options,
         interceptors: interceptors);
 
-  $grpc.ResponseFuture<$0.AudioResponse> processAudio($0.AudioRequest request, {$grpc.CallOptions? options}) {
-    return $createUnaryCall(_$processAudio, request, options: options);
+  $grpc.ResponseStream<$0.InitializeResponse> initializeSession($0.InitializeRequest request, {$grpc.CallOptions? options}) {
+    return $createStreamingCall(_$initializeSession, $async.Stream.fromIterable([request]), options: options);
   }
 
-  $grpc.ResponseFuture<$0.InitializeResponse> initializeSession($0.InitializeRequest request, {$grpc.CallOptions? options}) {
-    return $createUnaryCall(_$initializeSession, request, options: options);
+  $grpc.ResponseStream<$0.AudioResponse> processAudio($async.Stream<$0.AudioRequest> request, {$grpc.CallOptions? options}) {
+    return $createStreamingCall(_$processAudio, request, options: options);
   }
 }
 
@@ -50,30 +50,26 @@ abstract class AudioServiceBase extends $grpc.Service {
   $core.String get $name => 'audio.AudioService';
 
   AudioServiceBase() {
-    $addMethod($grpc.ServiceMethod<$0.AudioRequest, $0.AudioResponse>(
-        'ProcessAudio',
-        processAudio_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) => $0.AudioRequest.fromBuffer(value),
-        ($0.AudioResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.InitializeRequest, $0.InitializeResponse>(
         'InitializeSession',
         initializeSession_Pre,
         false,
-        false,
+        true,
         ($core.List<$core.int> value) => $0.InitializeRequest.fromBuffer(value),
         ($0.InitializeResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.AudioRequest, $0.AudioResponse>(
+        'ProcessAudio',
+        processAudio,
+        true,
+        true,
+        ($core.List<$core.int> value) => $0.AudioRequest.fromBuffer(value),
+        ($0.AudioResponse value) => value.writeToBuffer()));
   }
 
-  $async.Future<$0.AudioResponse> processAudio_Pre($grpc.ServiceCall call, $async.Future<$0.AudioRequest> request) async {
-    return processAudio(call, await request);
+  $async.Stream<$0.InitializeResponse> initializeSession_Pre($grpc.ServiceCall call, $async.Future<$0.InitializeRequest> request) async* {
+    yield* initializeSession(call, await request);
   }
 
-  $async.Future<$0.InitializeResponse> initializeSession_Pre($grpc.ServiceCall call, $async.Future<$0.InitializeRequest> request) async {
-    return initializeSession(call, await request);
-  }
-
-  $async.Future<$0.AudioResponse> processAudio($grpc.ServiceCall call, $0.AudioRequest request);
-  $async.Future<$0.InitializeResponse> initializeSession($grpc.ServiceCall call, $0.InitializeRequest request);
+  $async.Stream<$0.InitializeResponse> initializeSession($grpc.ServiceCall call, $0.InitializeRequest request);
+  $async.Stream<$0.AudioResponse> processAudio($grpc.ServiceCall call, $async.Stream<$0.AudioRequest> request);
 }

@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:grpc/grpc.dart';
-import 'package:interview_agents_ai/generated/audio.pbgrpc.dart';
-import 'package:path_provider/path_provider.dart';
+import '../generated/audio.pbgrpc.dart';
 
 class GrpcService {
   final ClientChannel _channel;
@@ -16,79 +15,64 @@ class GrpcService {
           ),
         );
 
-  /// セッションの初期化リクエストを送信し、セッションIDと初回音声データを取得
-  Future<InitializeResponse> initializeSession({
+  /// セッションの初期化リクエストを送信し、ストリームの最初のレスポンスを取得
+  /// セッションの初期化リクエストを送信し、音声データをストリームで受信
+  Stream<InitializeResponse> initializeSession({
     required String agentId,
     required String userId,
-  }) async {
+  }) async* {
     final client = AudioServiceClient(_channel);
-
-    print(client);
-
-    final request = InitializeRequest(
-      agentId: agentId,
-      userId: userId,
-    );
-
-    print(request);
+    final request = InitializeRequest(agentId: agentId, userId: userId);
 
     try {
-      // 初期化リクエストを送信
-      final response = await client.initializeSession(request);
+      // サーバーからのレスポンスをストリームで受信
+      final responseStream = client.initializeSession(request);
 
-      print(response);
-
-      // 初期化レスポンス（セッションIDと初回音声データ）を返す
-      return response;
+      // ストリームを順次処理して返す
+      await for (final response in responseStream) {
+        yield response; // 受信した音声データをそのままストリームで View に流す
+      }
     } catch (e) {
       throw Exception('Failed to initialize session: $e');
     }
   }
 
-  /// 音声データをサーバーに送信し、レスポンスの音声データを取得
-  Future<Uint8List> sendAudio({
+  /// 音声データをリアルタイムでストリーム送信し、ストリームでレスポンスを受け取る
+  Stream<Uint8List> sendAudio({
     required String sessionId,
     required String agentId,
     required String userId,
     required int currentRound,
-    Uint8List? audioData,
-  }) async {
-    print('Sending audio data...');
-    print('Audio Data Type: ${audioData.runtimeType}');
-    print('Audio Data Length: ${audioData?.length}');
-    print('Audio Data Sample: ${audioData?.sublist(0, 10)}'); // 一部を表示
-
+    required Stream<Uint8List> audioStream,
+  }) async* {
     final client = AudioServiceClient(_channel);
+    final requestStream = StreamController<AudioRequest>();
 
-    final request = AudioRequest(
-      sessionId: sessionId,
-      agentId: agentId,
-      userId: userId,
-      currentRound: currentRound,
-      audioData: audioData ?? Uint8List(0), // デフォルト値を空のバイト配列に設定
-    );
+    // マイクからの音声ストリームを gRPC サーバーに送信
+    audioStream.listen((audioData) {
+      final request = AudioRequest(
+        sessionId: sessionId,
+        agentId: agentId,
+        userId: userId,
+        currentRound: currentRound,
+        audioData: audioData,
+      );
+
+      print('ストリーム送信中');
+
+      requestStream.sink.add(request);
+    }, onDone: () {
+      print('ストリーム送信完了');
+      requestStream.close();
+    });
 
     try {
-      // 音声データリクエストを送信し、レスポンスを取得
-      final response = await client.processAudio(request);
+      // サーバーからのレスポンスをストリームで受け取る
+      final responseStream = client.processAudio(requestStream.stream);
 
-      // サーバーから返された音声データ（List<int>）をUint8Listに変換
-      final audioData = Uint8List.fromList(response.audioData);
-
-      // // デバッグ用：保存用のファイルパスを取得
-      // final tempDir = await getTemporaryDirectory();
-      // final filePath = '${tempDir.path}/response_audio.wav';
-      // print(filePath);
-
-      // // デバッグ用：音声データをファイルに保存
-      // final file = File(filePath);
-      // await file.writeAsBytes(audioData);
-
-      // // 保存されたファイルパスをログに出力
-      // print('Audio data saved to: $filePath');
-
-      // 保存後の音声データを返す
-      return audioData;
+      await for (final response in responseStream) {
+        yield Uint8List.fromList(response.audioData); // 音声データをリアルタイムで返す
+      }
     } catch (e) {
       throw Exception('Failed to send audio to server: $e');
     }
