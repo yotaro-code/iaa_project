@@ -41,7 +41,7 @@ class _AddAgentPageState extends ConsumerState<AddAgentPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("エージェントの作成に成功しました！"),
+        title: const Text("エージェントの作成に\n成功しました！"),
         actions: [
           TextButton(
             onPressed: () {
@@ -80,75 +80,83 @@ class _AddAgentPageState extends ConsumerState<AddAgentPage> {
       appBar: AppBar(
         title: const Text('Add Agents'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Agent Name
-            const Text(
-              "Agent Name",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _agentNameController,
-              decoration: InputDecoration(
-                hintText: "例：アプリエンジニア採用",
-                fillColor: AppColors.contentBackground, // 背景色を設定
-                filled: true, // fillColor を有効化
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none, // 枠線を消す場合
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(), // タップでキーボードを閉じる
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Agent Name
+              const Text(
+                "Agent Name",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _agentNameController,
+                decoration: InputDecoration(
+                  hintText: "例：アプリエンジニア採用",
+                  fillColor: AppColors.contentBackground, // 背景色を設定
+                  filled: true, // fillColor を有効化
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none, // 枠線を消す
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8, horizontal: 12), // 適度な余白
                 ),
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 8, horizontal: 12), // 適度な余白
+                style: TextStyle(color: AppColors.onContentBackground), // テキスト色
               ),
-              style: TextStyle(color: AppColors.onContentBackground), // テキスト色
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-// Agent Information
-            const Text(
-              "Agent Information",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _agentInfoController,
-              maxLines: 10,
-              decoration: InputDecoration(
-                hintText: "想定する採用基準等を入力してください。",
-                fillColor: AppColors.contentBackground, // 背景色を設定
-                filled: true, // fillColor を有効化
-                border: InputBorder.none, // 境界線をなくす
-                contentPadding: EdgeInsets.symmetric(
-                    vertical: 8, horizontal: 12), // 適度な余白を追加
+              // Agent Information
+              const Text(
+                "Agent Information",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // 送信ボタン
-            Center(
-              child: ElevatedButton(
-                onPressed: state.isLoading ? null : _submitAgent,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary, // 背景色を適用
-                  foregroundColor: AppColors.onPrimary, // 文字色を適用
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _agentInfoController,
+                maxLines: 10,
+                decoration: InputDecoration(
+                  hintText: "興味のある仕事の採用基準等を入力してください。",
+                  fillColor: AppColors.contentBackground, // 背景色を設定
+                  filled: true, // fillColor を有効化
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none, // 境界線をなくす
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8, horizontal: 12), // 適度な余白を追加
                 ),
-                child: state.isLoading
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    : const Text(
-                        "Agents作成",
-                        style: TextStyle(fontSize: 16),
-                      ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+
+              // 送信ボタン
+              Center(
+                child: ElevatedButton(
+                  onPressed: state.isLoading ? null : _submitAgent,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary, // 背景色を適用
+                    foregroundColor: AppColors.onPrimary, // 文字色を適用
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  child: state.isLoading
+                      ? const CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        )
+                      : const Text(
+                          "Agents作成",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16), // 最下部に余白を追加
+            ],
+          ),
         ),
       ),
     );
