@@ -96,6 +96,7 @@ export const getAgentData = async (
     keywords: string[];
   }>;
   feedbackTemplate: {
+    summary: string;
     guidance: string;
     points: string[];
   };
@@ -133,6 +134,7 @@ export const getAgentData = async (
       topicSwitchRounds: agentData.topicSwitchRounds || [],
       topics: agentData.topics || [],
       feedbackTemplate: agentData.feedbackTemplate || {
+        summary: "",
         guidance: "",
         points: [],
       },
