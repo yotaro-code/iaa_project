@@ -4,11 +4,11 @@ package audio;
 
 // サービス定義
 service AudioService {
-  // クライアントが音声データを送り、サーバから音声データを受け取る
-  rpc ProcessAudio(AudioRequest) returns (AudioResponse);
+  // クライアントがセッションを初期化するリクエストを送り、サーバーが音声データをストリームで返す
+  rpc InitializeSession (InitializeRequest) returns (stream InitializeResponse);
 
-  // 初期化リクエスト
-  rpc InitializeSession(InitializeRequest) returns (InitializeResponse);
+  // クライアントが音声データをストリームで送り、サーバーも音声データをストリームで返す
+  rpc ProcessAudio (stream AudioRequest) returns (stream AudioResponse);
 }
 
 // --- メッセージ定義 ---
