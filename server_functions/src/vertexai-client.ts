@@ -24,7 +24,7 @@ const FIRST_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.1,
       pitch: 0.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Ffirst_interviewer_1.webp?alt=media&token=7fd7be79-155b-426b-b41b-fe46bf8ccaec",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_first_interviewer_1.png?alt=media&token=adfc5608-85c3-4d83-a337-1c17d89e4d01",
   },
   {
     textToSpeechConfig: {
@@ -33,7 +33,7 @@ const FIRST_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.0,
       pitch: -2.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Ffirst_interviewer_2.webp?alt=media&token=be71fcdf-5b18-4847-85db-9df88aeb2e1c",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_first_interviewer_2.png?alt=media&token=030608de-c6e9-4e06-be62-1ceb2dfdd20e",
   },
 ];
 
@@ -46,7 +46,7 @@ const SECOND_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.3,
       pitch: -1.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsecond_interviewer_1.webp?alt=media&token=b529e165-5c29-4fe1-bd42-67f4f3d8e6d2",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_second_interviewer_1.png?alt=media&token=ca8f42f3-170a-40f4-acad-dc11c9252e6e",
   },
   {
     textToSpeechConfig: {
@@ -55,7 +55,7 @@ const SECOND_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.2,
       pitch: -1.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsecond_interviewer_2.webp?alt=media&token=0916ebcc-8580-4f1d-bd96-27021e3aa4a7",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_second_interviewer_2.png?alt=media&token=dab1d740-c080-4660-a9a4-106f2241acbe",
   },
 ];
 
@@ -68,7 +68,7 @@ const FINAL_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.5,
       pitch: -3.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Ffinal_interviewer_1.webp?alt=media&token=a7e55919-7090-4227-a286-c2dacb00ebeb",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_final_interviewer_1.png?alt=media&token=8c095b64-5b0f-4cf9-bb42-d21d457f8653",
   },
   {
     textToSpeechConfig: {
@@ -77,7 +77,7 @@ const FINAL_INTERVIEW_PRESETS: PresetConfig[] = [
       speakingRate: 1.6,
       pitch: -5.0,
     },
-    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Ffinal_interviewer_2.webp?alt=media&token=449c7ba6-955c-4d9f-a890-001e1b3e8568",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/carbon-crossing-446001-p7.firebasestorage.app/o/agents_img%2Fsoco_final_interviewer_2.png?alt=media&token=25fd219a-693b-4c72-9bbd-e65b8dbe6ab7",
   },
 ];
 
@@ -139,7 +139,8 @@ export async function generateInterviewAgents(
          - guidance: 質問や話題を促すための文章
          - keywords: 関連するキーワードの配列
        - feedbackTemplate: {
-           guidance: "以下の基準に基づきフィードバックを作成してください。",
+           summary: "一次面接官目線で合格にする条件（300文字以内）",
+           guidance: "以下の基準に基づき、一次面接官としてフィードバックを作成してください。合格を出しても採用される可能性は低いため、評価のハードルは低めでも良いです。",
            points: [
              "一次面接官として評価すべきポイント1（基準はなるべく低く）",
              "一次面接官として評価すべきポイント2（基準はなるべく低く）",
@@ -152,7 +153,8 @@ export async function generateInterviewAgents(
        - topicSwitchRounds: [1, 4]
        - topics: (例: プロジェクト経験、問題解決能力 など)
        - feedbackTemplate: {
-           guidance: "以下の基準に基づきフィードバックを作成してください。",
+           summary: "二次面接官目線で合格にする条件（300文字以内）",
+           guidance: "以下の基準に基づき、二次面接官としてフィードバックを作成してください。合格を出しても採用されるとは限りませんので、ポテンシャルがあれば、評価のハードルを低くしても構いません。",
            points: [
              "二次面接官として評価すべきポイント1（基準は少し低く）",
              "二次面接官として評価すべきポイント2（基準は少し低く）",
@@ -165,6 +167,7 @@ export async function generateInterviewAgents(
        - topicSwitchRounds: [1, 4]
        - topics: (例: キャリアビジョン、文化フィット など)
        - feedbackTemplate: {
+           summary: "二次面接官目線で合格にする条件（300文字以内）",
            guidance: "以下の基準に基づきフィードバックを作成してください。",
            points: [
              "最終面接官として評価すべきポイント1",
@@ -192,8 +195,8 @@ export async function generateInterviewAgents(
     ■ 注意:
     - 配列は3つの要素のみ (一次面接官、二次面接官、最終面接官)。
     - 各オブジェクトに "description", "topicSwitchRounds", "topics", "feedbackTemplate" の4つを必ず含める。
-    - feedbackTemplate.guidance は "以下の基準に基づきフィードバックを作成してください。" で固定する。
     - "points" は面接官の特徴および以下の募集要項に沿った内容を3つほど挙げる。
+    - "summary" はそれぞれの立場で合格にする条件（300文字以内）を作る。
     
     【募集要項】
     ${description}
@@ -246,6 +249,7 @@ export async function generateInterviewAgents(
             keywords?: string[];
           }>;
           feedbackTemplate?: {
+            summary?: string;
             guidance?: string;
             points?: string[];
           };
