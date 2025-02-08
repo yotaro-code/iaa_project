@@ -130,6 +130,10 @@ class InterviewViewModel extends _$InterviewViewModel {
       requestAudioData: requestAudioData ?? state.requestAudioData,
       responseAudioData: responseAudioData ?? state.responseAudioData,
     );
+
+    // print("isAgentSpeaking:$isAgentSpeaking");
+    // print("isRecording:$isRecording");
+    // print("isRequesting:$isRequesting");
   }
 
   /// **録音開始**
