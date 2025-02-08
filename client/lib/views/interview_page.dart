@@ -94,7 +94,8 @@ class _InterviewPageState extends ConsumerState<InterviewPage>
     try {
       final viewModelNotifier =
           ref.read(interviewViewModelProvider(widget.agentId).notifier);
-      viewModelNotifier.updateState(isAgentSpeaking: true);
+      viewModelNotifier.updateState(
+          isAgentSpeaking: true, isRecording: false, isRequesting: false);
 
       await _audioPlayer.setAudioSource(MemoryAudioSource(audioData));
       await _audioPlayer.play();
