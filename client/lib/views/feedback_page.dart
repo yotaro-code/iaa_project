@@ -46,12 +46,22 @@ class FeedbackPage extends ConsumerWidget {
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundImage: agent.imageUrl != null
-                            ? NetworkImage(agent.imageUrl!)
-                            : const AssetImage('assets/placeholder.png')
-                                as ImageProvider,
+                      Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white, // 背景を白に設定
+                        ),
+                        child: ClipOval(
+                          child: FittedBox(
+                            fit: BoxFit.contain, // 画像が円の中に収まるように調整
+                            child: Image.network(
+                              agent.imageUrl ??
+                                  'https://via.placeholder.com/100',
+                              width: 100, // 画像の幅（円の直径に合わせる）
+                              height: 100, // 画像の高さ（円の直径に合わせる）
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
