@@ -47,5 +47,10 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Some message to describe why you need this permission</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
