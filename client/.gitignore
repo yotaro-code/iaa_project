@@ -62,3 +62,4 @@ android/app/key.jks
 
 # firebase
 firebase.json
+lib/firebase_options.dart
