@@ -62,4 +62,14 @@ android/app/key.jks
 
 # firebase
 firebase.json
-lib/firebase_options.dart
+firebase_options.dart
+
+# アクセスキーなどの接続/設定ファイル
+ExportOptions.plist
+dart_defines/**
+scripts/**
+GoogleService-Info.plist
+google-services.json
+env*.g.dart
+firebase_options*.dart
+firebase_app_id_file.json
