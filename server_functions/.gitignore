@@ -32,3 +32,4 @@ pnpm-debug.log*
 
 # firebase
 client/firebase.json 
+client/lib/firebase_options.dart
