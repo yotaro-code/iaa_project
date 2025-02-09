@@ -14,15 +14,39 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+<<<<<<< HEAD
+=======
+    
+    buildscript {
+        repositories {
+            google()
+            mavenCentral()
+            maven {
+                url = uri("https://storage.googleapis.com/r8-releases/raw")
+            }
+        }
+        dependencies {
+            classpath("com.android.tools:r8:8.2.24")
+        }
+    }
+>>>>>>> develop
 }
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+<<<<<<< HEAD
     id "com.android.application" version "7.3.0" apply false
     // START: FlutterFire Configuration
     id "com.google.gms.google-services" version "4.3.15" apply false
     // END: FlutterFire Configuration
     id "org.jetbrains.kotlin.android" version "1.7.10" apply false
+=======
+    id "com.android.application" version "7.4.2" apply false
+    // START: FlutterFire Configuration
+    id "com.google.gms.google-services" version "4.3.15" apply false
+    // END: FlutterFire Configuration
+    id "org.jetbrains.kotlin.android" version "1.9.0" apply false
+>>>>>>> develop
 }
 
 include ":app"
